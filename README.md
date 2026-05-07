@@ -103,7 +103,7 @@ operating-condition cloud, populating all nine cells of the
 
 ```bash
 # Option A: download with the HF CLI (one-time)
-huggingface-cli download DeCoDELab/FLOATBench --repo-type=dataset --local-dir=data
+hf download DeCoDELab/FLOATBench --repo-type=dataset --local-dir=data
 
 # Option B: load on-the-fly from Python
 python -c "from datasets import load_dataset; \

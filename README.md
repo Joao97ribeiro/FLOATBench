@@ -153,6 +153,53 @@ CPU-only training works for `--presets=best` (tree ensembles only) but
 is significantly slower for `--presets=extreme` and effectively
 disables `zeroshot_2025_tabfm` (TabPFN).
 
+### What lands in `outputs/<exp>/<tower>/`
+
+After a full run the experiment root is laid out like this:
+
+```
+outputs/within/ref/
+├── best/model/                    AutoGluon predictor (best preset)
+│   ├── autogluon_meta.json        config + features used at fit time
+│   ├── leaderboard.csv            AG built-in leaderboard (val score)
+│   ├── leaderboard_test.csv       same leaderboard, scored on test set
+│   ├── leaderboard_test_summaries/
+│   │   ├── leaderboard_test_metrics.csv      r2 / RelL² damage + DEL
+│   │   ├── leaderboard_test_groups.csv       per-regime metrics (IT/IP/EX × wind/wave)
+│   │   ├── leaderboard_test_sections.csv     per-section metrics (1 row per model × section)
+│   │   └── del/                              bootstrap CI95 over DEL (paper Table 2)
+│   │       ├── leaderboard_test_summary.csv          point estimates
+│   │       ├── leaderboard_test_summary_ci95.csv     95% bootstrap CIs
+│   │       ├── leaderboard_test_percentiles.csv      bootstrap percentiles
+│   │       ├── leaderboard_test_regime_rel_l2.csv    RelL² DEL per regime
+│   │       └── leaderboard_test_section_rel_l2.csv   RelL² DEL per section
+│   └── models/<MODEL_NAME>/test/predictions.csv      per-model raw predictions
+├── extreme/model/                 (same layout, extreme preset)
+└── benchmark/                     cross-preset merge (the headline outputs)
+    ├── model_pool.csv             paper Table 9 (rows = preset, cols = family)
+    ├── leaderboard/
+    │   ├── ranking/
+    │   │   ├── bump_chart.png                  paper Fig. 6 (rank movement)
+    │   │   ├── scatter_global_vs_ex_ex_*.png   global vs EX_EX cross-over
+    │   │   ├── scatter_sections_top_models_*.png  per-section scatter (sec1 / sec30 / EX_EX)
+    │   │   └── predictions_report.log          which models had predictions, which were auto-generated
+    │   ├── regimes/
+    │   │   ├── heatmap_groups_mre_del.png       3×3 regime heatmap (paper Fig. 5)
+    │   │   └── heatmap_9groups_mre_del.png      9-cell expanded heatmap
+    │   ├── extrapolation/
+    │   │   ├── bar_family_regime_mre_del.png   per-family RelL² across regimes
+    │   │   └── scatter_global_vs_ex_ex_*.png
+    │   └── comparison/
+    │       └── family_distribution_rel_l2_del.png   distribution of RelL² across families
+    └── leaderboard_test_summaries/   merged across both presets (same files as per-preset)
+```
+
+Most CSVs are flat tables ready for downstream analysis; columns are
+self-describing (`r2_damage`, `rel_l2_del`, `rel_l2_del_EX_EX`,
+`rel_l2_del_section_<i>`, …). The `bump_chart.png`,
+`scatter_global_vs_ex_ex_*.png` and `heatmap_groups_*.png` reproduce
+the paper's headline E2 / E3 figures.
+
 ### Stages individually
 
 ```bash

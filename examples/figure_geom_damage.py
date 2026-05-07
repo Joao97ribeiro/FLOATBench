@@ -34,9 +34,9 @@ flags.DEFINE_string("output", "figure_geom_damage.png",
 
 TOWERS = ("ref", "opt1", "opt2")
 TOWER_COLORS = {
-    "ref": COLORS_DICT["dark_blue_paper"],
-    "opt1": COLORS_DICT["red_paper"],
-    "opt2": COLORS_DICT["brown_paper"],
+    "ref": COLORS_DICT["dark_gray_paper"],
+    "opt1": COLORS_DICT["blue_paper"],
+    "opt2": COLORS_DICT["red_paper"],
 }
 
 
@@ -75,40 +75,66 @@ def per_section_summary(df):
 
 
 def plot_figure(summaries, out_path):
-    """Plot 3-panel figure: diameter, thickness, lifetime damage."""
-    fig, axes = plt.subplots(1, 3, figsize=(11, 5), sharey=True)
-    panels = (
-        ("diameter_m", "Outer diameter (m)"),
-        ("thickness_m", "Wall thickness (m)"),
-        ("lifetime_damage", "Lifetime weighted damage"),
-    )
+    """Plot 3-panel figure: diameter, thickness, lifetime damage.
+
+    Mirrors the paper Figure 4 aesthetic: step plots per section,
+    thickness in mm, linear damage axis, REF=grey / OPT1=blue /
+    OPT2=red, panel titles on top, shared legend at the bottom.
+    """
+    plt.style.use("fivethirtyeight")
+    fig, axes = plt.subplots(1,
+                             3,
+                             figsize=(10.8, 4.0),
+                             facecolor="white",
+                             sharey=True,
+                             gridspec_kw={"wspace": 0.18})
+    ax_d, ax_t, ax_dmg = axes
+
     grid_color = COLORS_DICT["light_gray_paper"]
-    spine_color = COLORS_DICT["dark_gray_paper"]
-    for ax, (col, xlabel) in zip(axes, panels):
-        for tower, df in summaries.items():
-            ax.plot(df[col],
-                    df["height_m"],
-                    color=TOWER_COLORS[tower],
-                    lw=2.0,
-                    label=tower.upper())
-        ax.set_xlabel(xlabel, fontsize=11)
-        ax.grid(True, color=grid_color, linewidth=0.6, alpha=0.8)
-        ax.set_axisbelow(True)
-        for side in ("top", "right"):
-            ax.spines[side].set_visible(False)
-        for side in ("left", "bottom"):
-            ax.spines[side].set_color(spine_color)
-            ax.spines[side].set_linewidth(0.8)
-        ax.tick_params(colors=spine_color, labelsize=10)
-    axes[2].set_xscale("log")
-    axes[0].set_ylabel("Tower height (m)", fontsize=11)
-    axes[0].legend(loc="best",
-                   frameon=False,
-                   fontsize=11,
-                   labelcolor=spine_color)
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=180, bbox_inches="tight",
-                facecolor="none", transparent=True)
+    tick_color = COLORS_DICT["dark_gray_paper"]
+
+    for tower in TOWERS:
+        df = summaries[tower]
+        color = TOWER_COLORS[tower]
+        ax_d.step(df["diameter_m"], df["height_m"], where="mid",
+                  color=color, linewidth=1.5, label=tower.upper())
+        ax_t.step(df["thickness_m"] * 1000.0, df["height_m"], where="mid",
+                  color=color, linewidth=1.5, label=tower.upper())
+        ax_dmg.step(df["lifetime_damage"], df["height_m"], where="mid",
+                    color=color, linewidth=1.5, label=tower.upper())
+
+    ax_d.set_xlabel("Outer Diameter (m)", fontsize=10, labelpad=8)
+    ax_d.set_ylabel("Tower Height (m)", fontsize=10, labelpad=8)
+    ax_d.set_title("Outer Diameter", fontsize=12)
+
+    ax_t.set_xlabel("Wall Thickness (mm)", fontsize=10, labelpad=8)
+    ax_t.set_title("Wall Thickness", fontsize=12)
+
+    ax_dmg.set_xlabel("Lifetime weighted damage", fontsize=10, labelpad=8)
+    ax_dmg.set_title("Damage Profile", fontsize=12)
+
+    for ax in axes:
+        ax.set_facecolor("white")
+        ax.grid(True, linestyle="-", color=grid_color)
+        for side in ("top", "right", "left", "bottom"):
+            ax.spines[side].set_visible(True)
+            ax.spines[side].set_linewidth(1)
+            ax.spines[side].set_color(grid_color)
+        ax.tick_params(axis="both",
+                       which="major",
+                       length=4,
+                       width=1,
+                       labelsize=10,
+                       color=tick_color)
+
+    handles, labels = ax_d.get_legend_handles_labels()
+    fig.subplots_adjust(bottom=0.22)
+    fig.legend(handles, labels, loc="lower center",
+               ncol=len(TOWERS), bbox_to_anchor=(0.5, 0.0),
+               fontsize=10, frameon=False)
+
+    fig.savefig(out_path, dpi=300, transparent=False)
+    plt.close(fig)
     logging.info("Figure saved to %s", out_path)
 
 

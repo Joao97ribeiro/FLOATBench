@@ -135,6 +135,24 @@ push beyond the paper budget. Outputs land in
 each containing trained models, leaderboards with bootstrap CIs, and a
 cross-preset benchmark folder.
 
+### Hardware & runtime
+
+The benchmarks were run on a single workstation; nothing in the
+pipeline assumes a cluster. The defaults in `scripts/train/config.cfg`
+expose every knob:
+
+| Resource | Paper setting | Notes |
+| --- | --- | --- |
+| GPU | 1 × NVIDIA (24 GB used; 16 GB is enough) | Used for AutoGluon NN tabular families and TabPFN. Tunable via `--num_gpus` / `--num_gpus_per_fold`. |
+| CPU | 24 cores total, 12 per bagging fold | Tunable via `--num_cpus` / `--num_cpus_per_fold`. |
+| RAM | ≈ 32 GB | Peaks during AutoGluon ensembling. |
+| Disk | ~225 MB dataset + ~5–10 GB trained models | One AutoGluon predictor per preset/tower/experiment. |
+| Wall-clock | 4 h per preset (paper budget) | Set by `--time_limit`; full reproduction (3 towers × 2 presets × {within, cross}) ≈ 48 h. |
+
+CPU-only training works for `--presets=best` (tree ensembles only) but
+is significantly slower for `--presets=extreme` and effectively
+disables `zeroshot_2025_tabfm` (TabPFN).
+
 ### Stages individually
 
 ```bash

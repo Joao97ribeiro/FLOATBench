@@ -110,7 +110,7 @@ def _run_leaderboard(out_root, test_csv, preset):
     _run(cmd, f"leaderboard {preset}")
 
 
-def _run_benchmark(out_root):
+def _run_benchmark(out_root, test_csv):
     out = out_root / "benchmark"
     out.mkdir(parents=True, exist_ok=True)
     cmd = [
@@ -119,6 +119,7 @@ def _run_benchmark(out_root):
         f"--flagfile={SCRIPTS / 'benchmark' / 'config.cfg'}",
         f"--base_dir={out_root}",
         f"--output_dir={out}",
+        f"--auto_predict_test_csv={test_csv}",
     ]
     _run(cmd, "benchmark")
 
@@ -194,7 +195,7 @@ def main(_):
         if not FLAGS.skip_leaderboard:
             for preset, _ in presets:
                 _run_leaderboard(out_root, test_csv, preset)
-        _run_benchmark(out_root)
+        _run_benchmark(out_root, test_csv)
         logging.info("######## DONE %s -> %s ########", label, out_root)
 
 

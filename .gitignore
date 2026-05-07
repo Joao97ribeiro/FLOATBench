@@ -1,8 +1,8 @@
-data/
+/data/
 *.csv
 *.parquet
 
-outputs/
+/outputs/
 
 __pycache__/
 *.pyc

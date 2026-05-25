@@ -82,7 +82,7 @@ adjudicating competing tabular surrogates on this domain.
   alpha-shape splitter — all driven by `--flagfile` configs.
 
 > **Metrics.** Throughout, **DEL** is the Damage Equivalent Load and
-> **RelL²** the relative L² error. The headline metric is RelL² on DEL,
+> **Rel L²** the relative L² error. The headline metric is Rel L² on DEL,
 > reported globally and per regime / per section.
 
 ## What's in this repo
@@ -230,15 +230,15 @@ outputs/within/ref/
 │   ├── leaderboard.csv            AG built-in leaderboard (val score)
 │   ├── leaderboard_test.csv       same leaderboard, scored on test set
 │   ├── leaderboard_test_summaries/
-│   │   ├── leaderboard_test_metrics.csv      r2 / RelL² damage + DEL
+│   │   ├── leaderboard_test_metrics.csv      r2 / Rel L² damage + DEL
 │   │   ├── leaderboard_test_groups.csv       per-regime metrics (IT/IP/EX × wind/wave)
 │   │   ├── leaderboard_test_sections.csv     per-section metrics (1 row per model × section)
 │   │   └── del/                              bootstrap CI95 over DEL (paper Table 2)
 │   │       ├── leaderboard_test_summary.csv          point estimates
 │   │       ├── leaderboard_test_summary_ci95.csv     95% bootstrap CIs
 │   │       ├── leaderboard_test_percentiles.csv      bootstrap percentiles
-│   │       ├── leaderboard_test_regime_rel_l2.csv    RelL² DEL per regime
-│   │       └── leaderboard_test_section_rel_l2.csv   RelL² DEL per section
+│   │       ├── leaderboard_test_regime_rel_l2.csv    Rel L² DEL per regime
+│   │       └── leaderboard_test_section_rel_l2.csv   Rel L² DEL per section
 │   └── models/<MODEL_NAME>/test/predictions.csv      per-model raw predictions
 ├── extreme/model/                 (same layout, extreme preset)
 └── benchmark/                     cross-preset merge (the headline outputs)
@@ -253,10 +253,10 @@ outputs/within/ref/
     │   │   ├── heatmap_groups_mre_del.png       3×3 regime heatmap (paper Fig. 5)
     │   │   └── heatmap_9groups_mre_del.png      9-cell expanded heatmap
     │   ├── extrapolation/
-    │   │   ├── bar_family_regime_mre_del.png   per-family RelL² across regimes
+    │   │   ├── bar_family_regime_mre_del.png   per-family Rel L² across regimes
     │   │   └── scatter_global_vs_ex_ex_*.png
     │   └── comparison/
-    │       └── family_distribution_rel_l2_del.png   distribution of RelL² across families
+    │       └── family_distribution_rel_l2_del.png   distribution of Rel L² across families
     └── leaderboard_test_summaries/   merged across both presets (same files as per-preset)
 ```
 

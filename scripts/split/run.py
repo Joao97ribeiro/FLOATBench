@@ -62,7 +62,14 @@ def _write_metadata(df: pd.DataFrame, df_train: pd.DataFrame,
     n_all, n_train, n_test = len(df), len(df_train), len(df_test)
 
     def conds(frame: pd.DataFrame) -> int:
-        """Counts the unique (ws, hs, tp) grid conditions in ``frame``."""
+        """Counts the unique (ws, hs, tp) grid conditions in ``frame``.
+
+        Args:
+            frame: A FLOATBench dataframe with the three grid ID columns.
+
+        Returns:
+            The number of distinct (ws, hs, tp) combinations.
+        """
         return int(
             frame.groupby(["wind_speed_id", "wave_hs_id",
                            "wave_tp_id"]).ngroups)
@@ -187,7 +194,14 @@ def _split_one_tower(tower: str, train_ws: list[int], train_hs: list[int],
 
 
 def main(_) -> None:
-    """Splits every configured tower from the grid-ID flags."""
+    """Splits every configured tower from the grid-ID flags.
+
+    Plots and ``split_metadata.json`` are written for the first tower
+    only; every tower gets its ``train_damage.csv`` / ``test_damage.csv``.
+
+    Args:
+        _: Unused positional argv list passed by ``absl.app.run``.
+    """
     train_ws = [int(x) for x in FLAGS.train_ws_ids]
     train_hs = [int(x) for x in FLAGS.train_hs_ids]
     train_tp = [int(x) for x in FLAGS.train_tp_ids]

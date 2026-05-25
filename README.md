@@ -297,8 +297,6 @@ on the $22 \times 7 \times 7$ envelope.
   <img src="docs/figures/regime_partition.png" alt="Regime-aware train/test split" width="700"/>
 </p>
 
-### CLI (recommended)
-
 The defaults in `scripts/split/config.cfg` reproduce the paper split
 byte-for-byte. Run it as is:
 
@@ -342,8 +340,7 @@ distance threshold of `0.5`). To explore a different threshold,
 instantiate `floatbench.split.domain_groups.WindWaveDomainGrouper`
 directly with custom `interp_edges` / `extrap_edges`.
 
-This is what we used to run the sensitivity studies in the appendix; it
-also lets reviewers construct their own train/test splits without
+This lets you construct your own train/test splits without
 re-simulating any OpenFAST cases.
 
 ## Headline findings

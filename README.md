@@ -3,27 +3,122 @@
 </p>
 
 # FLOATBench: A Dataset and Benchmark for Floating Offshore Wind Turbine Tower Fatigue
+<p align="center">
+  <a href="https://joao97ribeiro.github.io/FLOATBench/">
+    <img src="https://img.shields.io/badge/project-page-2c5282.svg">
+  </a>
+  <a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench">
+    <img src="https://img.shields.io/badge/dataset-DeCoDELab%2FFLOATBench-ffcc00.svg?logo=huggingface&logoColor=white">
+  </a>
+  <a href="https://opensource.org/licenses/MIT">
+    <img src="https://img.shields.io/badge/code--license-MIT-blue.svg">
+  </a>
+  <a href="https://creativecommons.org/licenses/by/4.0/">
+    <img src="https://img.shields.io/badge/data--license-CC--BY--4.0-blue.svg">
+  </a>
+</p>
 
-Benchmark code for the FLOATBench tabular fatigue benchmark on three 22 MW
-floating offshore wind turbine (FOWT) towers. The dataset is hosted
-separately on Hugging Face:
-[`DeCoDELab/FLOATBench`](https://huggingface.co/datasets/DeCoDELab/FLOATBench).
+<p align="center"><strong>A regime-aware tabular fatigue benchmark for 22 MW floating offshore wind turbine towers.</strong></p>
 
-![FLOATBench overview](docs/figures/overview.png)
+**FLOATBench** is a public benchmark for surrogate modeling of FOWT
+tower fatigue. It pairs **582,120 section-level fatigue damage
+labels** across three 22 MW floating-tower geometries with a
+**regime-aware evaluation protocol** that stratifies test points into
+in-train, interpolation, and extrapolation regions of the joint
+wind/wave operating envelope. The dataset is hosted on Hugging Face
+at [`DeCoDELab/FLOATBench`](https://huggingface.co/datasets/DeCoDELab/FLOATBench);
+this repository contains the benchmark code, evaluation harness, and
+scripts to reproduce the paper results.
+
+<p align="center">
+  <img src="docs/figures/overview.png" alt="FLOATBench overview" width="800"/>
+</p>
+
+### Authors:
+- **João Alves Ribeiro** (corresponding, MIT) — [jpar@mit.edu](mailto:jpar@mit.edu)
+- **Bruno Alves Ribeiro** (TU Delft & Brown University)
+- **Francisco Pimenta** (University of Porto)
+- **Sérgio M. O. Tavares** (University of Aveiro)
+- **Faez Ahmed** (MIT) — [faez@mit.edu](mailto:faez@mit.edu)
+
+---
+
+
+## FLOATBench Paper
+
+**FLOATBench** is presented in the following paper, which fully
+describes the dataset, the regime-aware partition, and the
+evaluation protocol: *FLOATBench: A Dataset and Benchmark for
+Floating Offshore Wind Turbine Tower Fatigue* (under review at the
+NeurIPS 2026 Datasets and Benchmarks Track).
+
+Across up to 96 tabular surrogates per tower (E1/E2) and up to 63
+per fold (E3) — **735 trained surrogates** in total — the
+regime-aware protocol reveals **rank shifts** between global and
+extrapolation performance that random-split leaderboards
+systematically miss, and a related rank inversion appears under
+**cross-tower transfer**. The release of the dataset, evaluation
+harness, and trained surrogates establishes common ground for
+adjudicating competing tabular surrogates on this domain.
+
+
+## What FLOATBench Provides
+
+- **Dataset.** 582,120 rows of section-level fatigue damage across
+  three 22 MW FOWT towers (`ref`, `opt1`, `opt2`), derived from
+  high-fidelity OpenFAST simulations over a $22 \times 7 \times 7$
+  wind/wave operating envelope with 6 turbulence seeds and 30 tower
+  sections per geometry.
+- **Regime-aware split.** Alpha-shape partition of the joint
+  wind/wave envelope that labels each test row as `In-train`,
+  `Interpolate`, or `Extrapolate` on both axes, populating the full
+  9-cell regime grid.
+- **Benchmark protocols.** Three levels: random validation (E1),
+  within-tower regime-aware evaluation (E2), and cross-tower
+  transfer (E3).
+- **Reproducible harness.** End-to-end CLI scripts for training
+  (AutoGluon), evaluation (per-section / per-regime metrics),
+  bootstrap leaderboards, cross-preset benchmark plots, and the
+  alpha-shape splitter — all driven by `--flagfile` configs.
+
+> **Metrics.** Throughout, **DEL** is the Damage Equivalent Load and
+> **Rel L²** the relative L² error. The headline metric is Rel L² on DEL,
+> reported globally and per regime / per section.
 
 ## What's in this repo
 
 ```
 floatbench/        Python package (training, evaluation, plots, splitter)
-scripts/           Entry points for each pipeline stage
-  ├── train/       AutoGluon training (best / extreme presets)
-  ├── test/        Predict + per-section + per-regime evaluation
-  ├── leaderboard/ Bootstrap CI tables (DEL only)
-  ├── benchmark/   Cross-preset merge (heatmaps, bump, family, model_pool)
-  └── run_benchmark.py    one-shot orchestrator (E2 + E3)
-examples/          Reproducible scripts for the paper figures
-requirements.txt   Pinned runtime dependencies (Python 3.11)
+scripts/           Pipeline entry points — see "Scripts" below
+docs/              Figures and assets used in this README
+environment.yml    Conda environment (Python 3.12 + GPU PyTorch)
+requirements.txt   Pinned runtime dependencies
 ```
+
+## Scripts
+
+Each folder under [`scripts/`](./scripts) is a self-contained pipeline
+stage with its own `run.py` and a `--flagfile` `config.cfg`. Together
+they cover the full FLOATBench workflow, from recovering the split to
+the cross-preset benchmark figures:
+
+- [`scripts/split/`](./scripts/split) — reproduce or customize the
+  regime-aware train/test split from the grid IDs; writes the per-tower
+  `train_damage.csv` / `test_damage.csv`, diagnostic plots, and
+  `split_metadata.json`.
+- [`scripts/train/`](./scripts/train) — train an AutoGluon predictor for
+  one preset (`best` / `extreme`) on a tower's train CSV.
+- [`scripts/test/`](./scripts/test) — predict on the test set and score
+  it with per-section and per-regime (In-train / Interpolate /
+  Extrapolate) metrics.
+- [`scripts/leaderboard/`](./scripts/leaderboard) — build the bootstrap
+  CI leaderboard tables over DEL (paper Table 2).
+- [`scripts/benchmark/`](./scripts/benchmark) — merge presets into the
+  cross-preset benchmark outputs (regime heatmaps, bump chart, family
+  bars, `model_pool` table).
+- [`scripts/run_benchmark.py`](./scripts/run_benchmark.py) — one-shot
+  orchestrator that chains training, evaluation, leaderboard, and
+  benchmark for the within-tower (E2) and cross-tower (E3) experiments.
 
 ## Install
 
@@ -52,69 +147,21 @@ pip install -r requirements.txt
 
 ## Dataset
 
-FLOATBench captures fatigue damage along the towers of three 22 MW
-floating offshore wind turbines (FOWTs). Each tower is the IEA-22-MW
-reference platform with a redesigned tower:
+The released CSVs, schema, and per-tower layout are documented in
+the dataset README on Hugging Face:
+[`DeCoDELab/FLOATBench`](https://huggingface.co/datasets/DeCoDELab/FLOATBench).
+
+The three towers are:
 
 - `ref` — IEA-22-MW reference tower (baseline)
 - `opt1` — first redesign iterate (relaxed damage budget, $D \le 1.0$)
 - `opt2` — final iterate ($D \approx 0.9$, targeting $D \le 0.9$)
 
-For every tower we run 1,078 OpenFAST aero-servo-elastic simulations
-(1,440 s each, with 6 turbulence seeds per setpoint), then post-process
-damage-equivalent loads (DEL) and Palmgren–Miner damage at each of 30
-tower sections. The result is a tabular dataset where every row is one
-section under one operating condition.
+The `opt1` and `opt2` geometries were produced by
+[**FLOAT**](https://github.com/Joao97ribeiro/FLOAT), the fatigue-aware
+tower design-optimization framework that the `ref` tower is redesigned with.
 
 ![Tower geometry and lifetime damage](docs/figures/figure_geom_damage.png)
-
-### At a glance
-
-| | per tower | total (3 towers) |
-| --- | ---: | ---: |
-| Simulations (cases) | 1,078 | 3,234 |
-| Sections | 30 | 30 |
-| Rows | 194,040 | 582,120 |
-| Train rows (regime-aware split) | 51,840 (26.7%) | 155,520 |
-| Test rows | 142,200 (73.3%) | 426,600 |
-| Wind speeds | 21 setpoints, 4–25 m/s | — |
-| Sea states ($H_s$, $T_p$) | 56 unique pairs | — |
-| Turbulence seeds | 6 per setpoint | — |
-| OpenFAST run length | 1,440 s | — |
-
-### Files per tower (`data/{ref,opt1,opt2}/`)
-
-| File | Rows | Purpose |
-| --- | ---: | --- |
-| `train_damage.csv` | 51,840 | training fold (regime-aware split) |
-| `test_damage.csv` | 142,200 | test fold with `wind_group` / `wave_group` regime labels |
-| `data.csv` | 194,040 | full table (train + test) with `is_train` flag |
-| `metadata.json` | — | counts, split mode, schema version |
-
-### Schema (key columns)
-
-| Column | Unit | Description |
-| --- | --- | --- |
-| `sim_id` | — | unique simulation case id |
-| `wind_speed` | m/s | nominal hub-height wind speed |
-| `mean_wind_speed` | m/s | realized mean wind over the 1,440 s window |
-| `std_wind_speed` | m/s | realized turbulence intensity |
-| `wave_hs` | m | significant wave height |
-| `wave_tp` | s | spectral peak period |
-| `wind_seed_id` | — | turbulence seed (1–6) |
-| `section_id` | — | tower section (1–30, base to top) |
-| `section_height_m`, `section_radius_m`, `section_thickness_m` | m | section geometry |
-| `damage` | — | Palmgren–Miner damage at the section |
-| `damage_weight` | — | weight to recover lifetime damage via $\sum w_i D_i$ |
-| `wind_group`, `wave_group` | — | regime label: `In-train`, `Interpolate`, `Extrapolate` (test only) |
-
-### Wind / wave regimes
-
-The test fold partitions across an alpha-shape envelope of the training
-operating-condition cloud, populating all nine cells of the
-`In-train × Interpolate × Extrapolate` (wind × wave) grid:
-
-![Regime partition](docs/figures/regime_partition.png)
 
 ### Download
 
@@ -128,7 +175,9 @@ python -c "from datasets import load_dataset; \
 ```
 
 After this you should have `data/{ref,opt1,opt2}/{train_damage.csv,
-test_damage.csv, data.csv, metadata.json}`.
+test_damage.csv, data.csv, metadata.json}`. See the
+[dataset README](https://huggingface.co/datasets/DeCoDELab/FLOATBench)
+for the full schema and the regime-aware split definition.
 
 ## Quickstart
 
@@ -181,15 +230,15 @@ outputs/within/ref/
 │   ├── leaderboard.csv            AG built-in leaderboard (val score)
 │   ├── leaderboard_test.csv       same leaderboard, scored on test set
 │   ├── leaderboard_test_summaries/
-│   │   ├── leaderboard_test_metrics.csv      r2 / RelL² damage + DEL
+│   │   ├── leaderboard_test_metrics.csv      r2 / Rel L² damage + DEL
 │   │   ├── leaderboard_test_groups.csv       per-regime metrics (IT/IP/EX × wind/wave)
 │   │   ├── leaderboard_test_sections.csv     per-section metrics (1 row per model × section)
 │   │   └── del/                              bootstrap CI95 over DEL (paper Table 2)
 │   │       ├── leaderboard_test_summary.csv          point estimates
 │   │       ├── leaderboard_test_summary_ci95.csv     95% bootstrap CIs
 │   │       ├── leaderboard_test_percentiles.csv      bootstrap percentiles
-│   │       ├── leaderboard_test_regime_rel_l2.csv    RelL² DEL per regime
-│   │       └── leaderboard_test_section_rel_l2.csv   RelL² DEL per section
+│   │       ├── leaderboard_test_regime_rel_l2.csv    Rel L² DEL per regime
+│   │       └── leaderboard_test_section_rel_l2.csv   Rel L² DEL per section
 │   └── models/<MODEL_NAME>/test/predictions.csv      per-model raw predictions
 ├── extreme/model/                 (same layout, extreme preset)
 └── benchmark/                     cross-preset merge (the headline outputs)
@@ -204,10 +253,10 @@ outputs/within/ref/
     │   │   ├── heatmap_groups_mre_del.png       3×3 regime heatmap (paper Fig. 5)
     │   │   └── heatmap_9groups_mre_del.png      9-cell expanded heatmap
     │   ├── extrapolation/
-    │   │   ├── bar_family_regime_mre_del.png   per-family RelL² across regimes
+    │   │   ├── bar_family_regime_mre_del.png   per-family Rel L² across regimes
     │   │   └── scatter_global_vs_ex_ex_*.png
     │   └── comparison/
-    │       └── family_distribution_rel_l2_del.png   distribution of RelL² across families
+    │       └── family_distribution_rel_l2_del.png   distribution of Rel L² across families
     └── leaderboard_test_summaries/   merged across both presets (same files as per-preset)
 ```
 
@@ -224,7 +273,7 @@ the paper's headline E2 / E3 figures.
 python scripts/train/run.py --flagfile=scripts/train/config.cfg \
     --train_csv=data/ref/train_damage.csv \
     --test_csv=data/ref/test_damage.csv \
-    --output_dir=outputs/ref/best
+    --output_dir=outputs/within/ref/best
 
 # Evaluate
 python scripts/test/run.py --flagfile=scripts/test/config.cfg
@@ -241,40 +290,57 @@ python scripts/benchmark/run.py --flagfile=scripts/benchmark/config.cfg
 The release ships pre-split CSVs that match the paper Table F.1
 training set. The same splitter, however, lets you build **alternative
 training envelopes** for ablations: change which wind setpoints, wave
-pairs or seeds are used for training, or move the boundary between
-`Interpolate` and `Extrapolate` regimes:
+pairs or seeds are used for training by picking different grid IDs
+on the $22 \times 7 \times 7$ envelope.
 
-```python
-import pandas as pd
-from floatbench.split import split_train_test, split_test_groups
+<p align="center">
+  <img src="docs/figures/regime_partition.png" alt="Regime-aware train/test split" width="700"/>
+</p>
 
-data = pd.read_csv("data/ref/data.csv")
+The defaults in `scripts/split/config.cfg` reproduce the paper split
+byte-for-byte. Run it as is:
 
-# Paper split (matches released wind_group / wave_group exactly):
-df_train, df_test = split_train_test(
-    data, combinations_wind=-1, combinations_waves=4, combinations_seed=6,
-)
-test_with_regimes = split_test_groups(
-    df_train, df_test,
-    interp_names=["In-train", "Interpolate"], interp_edges=[0.5],
-    extrap_names=["Extrapolate"],
-)
-
-# A denser training envelope (8 wave pairs instead of 4):
-df_train2, df_test2 = split_train_test(
-    data, combinations_wind=-1, combinations_waves=8, combinations_seed=6,
-)
-
-# Stricter boundary between Interpolate and Extrapolate (alpha = 0.25):
-test_strict = split_test_groups(
-    df_train, df_test,
-    interp_names=["In-train", "Interpolate"], interp_edges=[0.25],
-    extrap_names=["Extrapolate"],
-)
+```bash
+python scripts/split/run.py --flagfile=scripts/split/config.cfg
 ```
 
-This is what we used to run the sensitivity studies in the appendix; it
-also lets reviewers construct their own train/test splits without
+To explore an alternative envelope, copy `scripts/split/config.cfg`
+and edit any of the `--train_ws_ids`, `--train_hs_ids`,
+`--train_tp_ids` lines. Excerpt of the config:
+
+```ini
+# wind_speed_id values that go to train (excluded: 1, 8, 15, 22)
+--train_ws_ids=2,3,4,5,6,7,9,10,11,12,13,14,16,17,18,19,20,21
+
+# wave_hs_id values that go to train (excluded: 1, 4, 7)
+--train_hs_ids=2,3,5,6
+
+# wave_tp_id values that go to train (excluded: 1, 4, 7)
+--train_tp_ids=2,3,5,6
+```
+
+Or override on the command line (e.g., denser wave envelope):
+
+```bash
+python scripts/split/run.py --flagfile=scripts/split/config.cfg \
+       --train_hs_ids=1,2,3,4,5,6,7 \
+       --output_dir=outputs/split_denser
+```
+
+Each run writes the per-tower `train_damage.csv`/`test_damage.csv`,
+the train + test diagnostic plots, and a top-level
+`split_metadata.json` with the grid summary and train-spacing
+statistics.
+
+### Tuning the alpha-shape threshold
+
+The boundary between `Interpolate` and `Extrapolate` is fixed in the
+released splitter (alpha-shape on the train hull plus a normalized
+distance threshold of `0.5`). To explore a different threshold,
+instantiate `floatbench.split.domain_groups.WindWaveDomainGrouper`
+directly with custom `interp_edges` / `extrap_edges`.
+
+This lets you construct your own train/test splits without
 re-simulating any OpenFAST cases.
 
 ## Headline findings
@@ -285,28 +351,18 @@ globally yet is overtaken at the worst-case wind-and-wave extrapolation
 cell (EX_EX) by a neural-network family the greedy selector systematically
 excludes:
 
-![Global vs EX_EX cross-over](docs/figures/crossover.png)
+<p align="center">
+  <img src="docs/figures/crossover.png" alt="Global vs EX_EX cross-over" width="500"/>
+</p>
 
 **Cross-tower (E3): transfer is asymmetric.** Training on a set that
 includes the baseline `ref` generalises well to the perturbed geometries
 (rank-1 Rel L² DEL of 0.067 / 0.098). Training without `ref`, however,
 collapses to 0.423 — a 4–6× degradation:
 
-![Cross-tower transfer](docs/figures/cross_tower.png)
-
-## Reproducing paper figures
-
-`examples/figure_geom_damage.py` reproduces the tower geometry +
-damage profile figure shown in the [Dataset](#dataset) section above,
-directly from the released CSVs:
-
-```bash
-# from the local copy (after huggingface-cli download)
-python examples/figure_geom_damage.py
-
-# or stream the dataset from Hugging Face on the fly
-python examples/figure_geom_damage.py --hf=True
-```
+<p align="center">
+  <img src="docs/figures/cross_tower.png" alt="Cross-tower transfer" width="500"/>
+</p>
 
 ## License
 
@@ -314,14 +370,21 @@ Code released under the [MIT License](LICENSE.txt). Dataset on
 Hugging Face is released under
 [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/).
 
-## Authors
-
-João Alves Ribeiro (corresponding, `jpar@mit.edu`), Bruno Alves Ribeiro,
-Francisco Pimenta, Sérgio M. O. Tavares, Faez Ahmed.
 
 ## Citation
 
-```
+If you use **FLOATBench** in your work, please cite:
+
+> *FLOATBench: A Dataset and Benchmark for Floating Offshore Wind
+> Turbine Tower Fatigue.*
+> João Alves Ribeiro, Bruno Alves Ribeiro, Francisco Pimenta,
+> Sérgio M. O. Tavares, Faez Ahmed. 2026. Under review at the
+> NeurIPS 2026 Datasets and Benchmarks Track.
+
+<details>
+<summary>BibTeX</summary>
+
+```bibtex
 @misc{floatbench2026,
   title  = {FLOATBench: A Dataset and Benchmark for Floating Offshore
             Wind Turbine Tower Fatigue},
@@ -332,3 +395,20 @@ Francisco Pimenta, Sérgio M. O. Tavares, Faez Ahmed.
   note   = {Under review at NeurIPS 2026 Datasets and Benchmarks Track}
 }
 ```
+</details>
+
+
+## Maintenance & Support
+
+For issues, questions, or feature requests related to FLOATBench:
+[FLOATBench Issues](https://github.com/Joao97ribeiro/FLOATBench/issues).
+
+
+## Acknowledgements
+
+The high-fidelity simulations underlying FLOATBench were produced
+with [OpenFAST](https://github.com/OpenFAST/openfast) on the
+[IEA-22-280-RWT](https://github.com/IEAWindSystems/IEA-22-280-RWT)
+reference floating wind turbine. The tabular surrogate pipeline
+relies on [AutoGluon](https://auto.gluon.ai). We thank these
+communities for keeping the underlying tools open.

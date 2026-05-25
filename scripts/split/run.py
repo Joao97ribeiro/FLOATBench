@@ -198,9 +198,6 @@ def main(_) -> None:
 
     Plots and ``split_metadata.json`` are written for the first tower
     only; every tower gets its ``train_damage.csv`` / ``test_damage.csv``.
-
-    Args:
-        _: Unused positional argv list passed by ``absl.app.run``.
     """
     train_ws = [int(x) for x in FLAGS.train_ws_ids]
     train_hs = [int(x) for x in FLAGS.train_hs_ids]

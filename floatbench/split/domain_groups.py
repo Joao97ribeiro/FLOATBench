@@ -172,7 +172,7 @@ class WindWaveDomainGrouper:
                 show_mean=True,
                 save_svg=save_svg,
                 train_reference=True,
-                title=f"Normalized ({self.kind_scaler}) Distance Histogram")
+                title="Normalized Train→Train Distance Histogram")
 
             # wave
             plots.plot_distance_histogram(
@@ -182,7 +182,7 @@ class WindWaveDomainGrouper:
                 show_mean=True,
                 save_svg=save_svg,
                 train_reference=True,
-                title=f"Normalized ({self.kind_scaler}) Distance Histogram")
+                title="Normalized Train→Train Distance Histogram")
 
         self._fitted = True
 
@@ -329,8 +329,7 @@ class WindWaveDomainGrouper:
                 group_names=self.wind_names,
                 plot_dir=plot_dist_dir,
                 save_svg=save_svg,
-                title=(f"Normalized ({self.kind_scaler}/{self.scale_stat}) "
-                       "Distance Histogram"))
+                title="Normalized Test→Train Distance Histogram")
             plots.plot_distance_histogram(
                 values=d_wave_norm,
                 space="wave",
@@ -338,8 +337,7 @@ class WindWaveDomainGrouper:
                 group_names=self.wave_names,
                 plot_dir=plot_dist_dir,
                 save_svg=save_svg,
-                title=(f"Normalized ({self.kind_scaler}/{self.scale_stat}) "
-                       "Distance Histogram"))
+                title="Normalized Test→Train Distance Histogram")
 
         return df_groups_test, meta
 

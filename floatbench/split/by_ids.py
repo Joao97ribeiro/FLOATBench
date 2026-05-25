@@ -29,23 +29,26 @@ def _flatten_grouper_plots(plot_dir: str) -> None:
     """Trim grouper-generated plots and move train→train hist to ``plots/``.
 
     Keeps only ``train_train_dist_hist_{wind,wave}.png`` (renamed to
-    ``plots/dist_train_{wind,wave}.png``). The test→train histograms
-    are regenerated separately by :func:`_plot_test_dist_by_regime`
-    with 3-colour regime stacks.
+    ``plots/dist_train_{wind,wave}.png``) and drops the rest of the
+    grouper's nested ``train_test/`` output tree.
+
+    Args:
+        plot_dir: Output root passed to :func:`split_with_regimes`; the
+            grouper writes its plots under
+            ``<plot_dir>/train_test/test_groups/plots/``.
     """
     nested = os.path.join(plot_dir, "train_test", "test_groups", "plots")
     out_plots = os.path.join(plot_dir, "plots")
     os.makedirs(out_plots, exist_ok=True)
     for axis in ("wind", "wave"):
-        src = os.path.join(nested, "dist",
-                           f"train_train_dist_hist_{axis}.png")
+        src = os.path.join(nested, "dist", f"train_train_dist_hist_{axis}.png")
         if os.path.exists(src):
             shutil.move(src, os.path.join(out_plots, f"dist_train_{axis}.png"))
     shutil.rmtree(os.path.join(plot_dir, "train_test"), ignore_errors=True)
 
-DEFAULT_TRAIN_WS_IDS = frozenset({
-    2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21
-})
+
+DEFAULT_TRAIN_WS_IDS = frozenset(
+    {2, 3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 14, 16, 17, 18, 19, 20, 21})
 DEFAULT_TRAIN_HS_IDS = frozenset({2, 3, 5, 6})
 DEFAULT_TRAIN_TP_IDS = frozenset({2, 3, 5, 6})
 
@@ -107,8 +110,7 @@ def split_with_regimes(
     train_hs_ids: Iterable[int] = DEFAULT_TRAIN_HS_IDS,
     train_tp_ids: Iterable[int] = DEFAULT_TRAIN_TP_IDS,
     plot_dir: str = None,
-) -> Tuple[pd.DataFrame, pd.DataFrame, Tuple[Polygon, Polygon],
-           Dict[str, Any]]:
+) -> Tuple[pd.DataFrame, pd.DataFrame, Tuple[Polygon, Polygon], Dict[str, Any]]:
     """Split by grid IDs and attach alpha-shape regime labels to test.
 
     The split itself is deterministic (ID-based); regime labels
@@ -135,8 +137,8 @@ def split_with_regimes(
         Train rows carry ``wind_group = wave_group = "In-train"`` by
         construction.
     """
-    df_train, df_test = split_train_test_by_ids(df, train_ws_ids,
-                                                 train_hs_ids, train_tp_ids)
+    df_train, df_test = split_train_test_by_ids(df, train_ws_ids, train_hs_ids,
+                                                train_tp_ids)
 
     grouper = domain_groups.WindWaveDomainGrouper(
         wind_cols=("mean_wind_speed", "std_wind_speed"),

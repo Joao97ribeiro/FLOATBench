@@ -10,9 +10,6 @@
   <a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench">
     <img src="https://img.shields.io/badge/dataset-DeCoDELab%2FFLOATBench-ffcc00.svg?logo=huggingface&logoColor=white">
   </a>
-  <a href="https://github.com/Joao97ribeiro/FLOATBench">
-    <img src="https://img.shields.io/badge/code-FLOATBench-1f6feb.svg?logo=github&logoColor=white">
-  </a>
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/badge/code--license-MIT-blue.svg">
   </a>
@@ -33,7 +30,9 @@ at [`DeCoDELab/FLOATBench`](https://huggingface.co/datasets/DeCoDELab/FLOATBench
 this repository contains the benchmark code, evaluation harness, and
 scripts to reproduce the paper results.
 
-![FLOATBench overview](docs/figures/overview.png)
+<p align="center">
+  <img src="docs/figures/overview.png" alt="FLOATBench overview" width="800"/>
+</p>
 
 ### Authors:
 - **João Alves Ribeiro** (corresponding, MIT) — [jpar@mit.edu](mailto:jpar@mit.edu)
@@ -82,19 +81,44 @@ adjudicating competing tabular surrogates on this domain.
   bootstrap leaderboards, cross-preset benchmark plots, and the
   alpha-shape splitter — all driven by `--flagfile` configs.
 
+> **Metrics.** Throughout, **DEL** is the Damage Equivalent Load and
+> **RelL²** the relative L² error. The headline metric is RelL² on DEL,
+> reported globally and per regime / per section.
+
 ## What's in this repo
 
 ```
 floatbench/        Python package (training, evaluation, plots, splitter)
-scripts/           Entry points for each pipeline stage
-  ├── split/       Reproduce / customize the regime-aware train/test split
-  ├── train/       AutoGluon training (best / extreme presets)
-  ├── test/        Predict + per-section + per-regime evaluation
-  ├── leaderboard/ Bootstrap CI tables (DEL only)
-  ├── benchmark/   Cross-preset merge (heatmaps, bump, family, model_pool)
-  └── run_benchmark.py    one-shot orchestrator (E2 + E3)
-requirements.txt   Pinned runtime dependencies (Python 3.11)
+scripts/           Pipeline entry points — see "Scripts" below
+docs/              Figures and assets used in this README
+environment.yml    Conda environment (Python 3.12 + GPU PyTorch)
+requirements.txt   Pinned runtime dependencies
 ```
+
+## Scripts
+
+Each folder under [`scripts/`](./scripts) is a self-contained pipeline
+stage with its own `run.py` and a `--flagfile` `config.cfg`. Together
+they cover the full FLOATBench workflow, from recovering the split to
+the cross-preset benchmark figures:
+
+- [`scripts/split/`](./scripts/split) — reproduce or customize the
+  regime-aware train/test split from the grid IDs; writes the per-tower
+  `train_damage.csv` / `test_damage.csv`, diagnostic plots, and
+  `split_metadata.json`.
+- [`scripts/train/`](./scripts/train) — train an AutoGluon predictor for
+  one preset (`best` / `extreme`) on a tower's train CSV.
+- [`scripts/test/`](./scripts/test) — predict on the test set and score
+  it with per-section and per-regime (In-train / Interpolate /
+  Extrapolate) metrics.
+- [`scripts/leaderboard/`](./scripts/leaderboard) — build the bootstrap
+  CI leaderboard tables over DEL (paper Table 2).
+- [`scripts/benchmark/`](./scripts/benchmark) — merge presets into the
+  cross-preset benchmark outputs (regime heatmaps, bump chart, family
+  bars, `model_pool` table).
+- [`scripts/run_benchmark.py`](./scripts/run_benchmark.py) — one-shot
+  orchestrator that chains training, evaluation, leaderboard, and
+  benchmark for the within-tower (E2) and cross-tower (E3) experiments.
 
 ## Install
 
@@ -132,6 +156,10 @@ The three towers are:
 - `ref` — IEA-22-MW reference tower (baseline)
 - `opt1` — first redesign iterate (relaxed damage budget, $D \le 1.0$)
 - `opt2` — final iterate ($D \approx 0.9$, targeting $D \le 0.9$)
+
+The `opt1` and `opt2` geometries were produced by
+[**FLOAT**](https://github.com/Joao97ribeiro/FLOAT), the fatigue-aware
+tower design-optimization framework that the `ref` tower is redesigned with.
 
 ![Tower geometry and lifetime damage](docs/figures/figure_geom_damage.png)
 
@@ -245,7 +273,7 @@ the paper's headline E2 / E3 figures.
 python scripts/train/run.py --flagfile=scripts/train/config.cfg \
     --train_csv=data/ref/train_damage.csv \
     --test_csv=data/ref/test_damage.csv \
-    --output_dir=outputs/ref/best
+    --output_dir=outputs/within/ref/best
 
 # Evaluate
 python scripts/test/run.py --flagfile=scripts/test/config.cfg
@@ -264,6 +292,10 @@ training set. The same splitter, however, lets you build **alternative
 training envelopes** for ablations: change which wind setpoints, wave
 pairs or seeds are used for training by picking different grid IDs
 on the $22 \times 7 \times 7$ envelope.
+
+<p align="center">
+  <img src="docs/figures/regime_partition.png" alt="Regime-aware train/test split" width="700"/>
+</p>
 
 ### CLI (recommended)
 
@@ -302,32 +334,6 @@ the train + test diagnostic plots, and a top-level
 `split_metadata.json` with the grid summary and train-spacing
 statistics.
 
-### Python API
-
-If you need programmatic access to the train/test frames and the
-alpha-shape polygons (e.g., for plotting or downstream tooling), use
-`split_with_regimes` directly:
-
-```python
-import pandas as pd
-from floatbench.split import split_with_regimes
-
-data = pd.read_csv("data/ref/data.csv")
-
-# Paper split (matches released wind_group / wave_group exactly):
-df_train, df_test, polygons, thresholds = split_with_regimes(
-    data,
-    train_ws_ids=[2,3,4,5,6,7, 9,10,11,12,13,14, 16,17,18,19,20,21],
-    train_hs_ids=[2, 3, 5, 6],
-    train_tp_ids=[2, 3, 5, 6],
-)
-```
-
-Returns `(df_train, df_test_with_regimes, polygons, thresholds_meta)`:
-the test rows carry the alpha-shape regime labels (`wind_group`,
-`wave_group`, `wind_wave_group`) and `polygons` is the train-domain
-hull for plotting.
-
 ### Tuning the alpha-shape threshold
 
 The boundary between `Interpolate` and `Extrapolate` is fixed in the
@@ -348,14 +354,18 @@ globally yet is overtaken at the worst-case wind-and-wave extrapolation
 cell (EX_EX) by a neural-network family the greedy selector systematically
 excludes:
 
-![Global vs EX_EX cross-over](docs/figures/crossover.png)
+<p align="center">
+  <img src="docs/figures/crossover.png" alt="Global vs EX_EX cross-over" width="500"/>
+</p>
 
 **Cross-tower (E3): transfer is asymmetric.** Training on a set that
 includes the baseline `ref` generalises well to the perturbed geometries
 (rank-1 Rel L² DEL of 0.067 / 0.098). Training without `ref`, however,
 collapses to 0.423 — a 4–6× degradation:
 
-![Cross-tower transfer](docs/figures/cross_tower.png)
+<p align="center">
+  <img src="docs/figures/cross_tower.png" alt="Cross-tower transfer" width="500"/>
+</p>
 
 ## License
 

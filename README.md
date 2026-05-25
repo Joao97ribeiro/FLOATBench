@@ -87,6 +87,7 @@ adjudicating competing tabular surrogates on this domain.
 ```
 floatbench/        Python package (training, evaluation, plots, splitter)
 scripts/           Entry points for each pipeline stage
+  ├── split/       Reproduce / customize the regime-aware train/test split
   ├── train/       AutoGluon training (best / extreme presets)
   ├── test/        Predict + per-section + per-regime evaluation
   ├── leaderboard/ Bootstrap CI tables (DEL only)

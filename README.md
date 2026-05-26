@@ -4,6 +4,9 @@
 
 # FLOATBench: A Dataset and Benchmark for Floating Offshore Wind Turbine Tower Fatigue
 <p align="center">
+  <a href="https://arxiv.org/abs/2605.25717">
+    <img src="https://img.shields.io/badge/arXiv-2605.25717-b31b1b.svg?logo=arxiv&logoColor=white">
+  </a>
   <a href="https://joao97ribeiro.github.io/FLOATBench/">
     <img src="https://img.shields.io/badge/project-page-2c5282.svg">
   </a>
@@ -378,21 +381,21 @@ If you use **FLOATBench** in your work, please cite:
 > *FLOATBench: A Dataset and Benchmark for Floating Offshore Wind
 > Turbine Tower Fatigue.*
 > João Alves Ribeiro, Bruno Alves Ribeiro, Francisco Pimenta,
-> Sérgio M. O. Tavares, Faez Ahmed. 2026. Under review at the
-> NeurIPS 2026 Datasets and Benchmarks Track.
+> Sérgio M. O. Tavares, Faez Ahmed. arXiv:2605.25717, 2026.
+> https://arxiv.org/abs/2605.25717
 
 <details>
 <summary>BibTeX</summary>
 
 ```bibtex
-@misc{floatbench2026,
-  title  = {FLOATBench: A Dataset and Benchmark for Floating Offshore
-            Wind Turbine Tower Fatigue},
-  author = {Alves Ribeiro, Jo\~ao and Alves Ribeiro, Bruno and
-            Pimenta, Francisco and Tavares, S\'ergio M.\,O. and
-            Ahmed, Faez},
-  year   = {2026},
-  note   = {Under review at NeurIPS 2026 Datasets and Benchmarks Track}
+@misc{ribeiro2026floatbenchdatasetbenchmarkfloating,
+      title={FLOATBench: A Dataset and Benchmark for Floating Offshore Wind Turbine Tower Fatigue},
+      author={João Alves Ribeiro and Bruno Alves Ribeiro and Francisco Pimenta and Sérgio M. O. Tavares and Faez Ahmed},
+      year={2026},
+      eprint={2605.25717},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2605.25717},
 }
 ```
 </details>

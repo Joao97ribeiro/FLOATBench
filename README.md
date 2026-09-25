@@ -2,7 +2,7 @@
   <img src="docs/figures/logo.png" alt="FLOATBench" width="500"/>
 </p>
 
-# FLOATBench: A Dataset and Benchmark for Floating Offshore Wind Turbine Tower Fatigue
+# FLOATBench: A Tabular Dataset and Benchmark for Fatigue Prediction on Floating Offshore Wind Turbine Towers
 <p align="center">
   <a href="https://arxiv.org/abs/2605.25717">
     <img src="https://img.shields.io/badge/arXiv-2605.25717-b31b1b.svg?logo=arxiv&logoColor=white">

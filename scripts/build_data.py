@@ -23,7 +23,6 @@ import argparse
 import base64
 import json
 import pathlib
-import re
 
 import numpy as np
 import pandas as pd
@@ -40,10 +39,14 @@ REGIMES = [
 
 
 def family(model):
-    """Model family from an AutoGluon model name."""
-    base = re.sub(r"(_r\d+)?(_BAG)?_L\d.*$", "", model)
-    base = re.sub(r"(XT|Large|MSE|Gini|Entr)$", "", base)
-    return {"WeightedEnsemble": "Ensemble"}.get(base, base)
+    """Model family, as get_model_family in floatbench/plots/benchmark.py."""
+    if "WeightedEnsemble" in model:
+        return "Ensemble"
+    for name in ("CatBoost", "LightGBM", "XGBoost", "NeuralNet", "TabM",
+                 "RandomForest", "ExtraTrees"):
+        if name in model:
+            return name
+    return "Other"
 
 
 def dataset(root):

@@ -12,15 +12,25 @@ In **Settings → Pages**, choose:
 - **Folder:** `/ (root)`
 
 The site is a single `index.html` with Bulma + Plotly loaded from CDN. No
-build step. The "Live Rows" section and the per-simulation button read the
-dataset directly from the Hugging Face dataset viewer API
-(`datasets-server.huggingface.co`, `DeCoDELab/FLOATBench`).
+build step.
 
-## Updating the interactive plots
+## Where the data comes from
 
-The Dataset Explorer and the Leaderboard read pre-extracted JSON files in
-[`static/data/`](./static/data). Regenerate them from a FLOATBench checkout
-with the released dataset in `data/` and a merged E2 benchmark:
+- **Dataset Explorer:** reads the six train/test parquet files of
+  [`DeCoDELab/FLOATBench`](https://huggingface.co/datasets/DeCoDELab/FLOATBench)
+  from Hugging Face when the page opens (~13 MB, parsed in the browser with
+  [hyparquet](https://github.com/hyparam/hyparquet)). If Hugging Face cannot
+  be reached, it falls back to the bundled copy in
+  `static/data/dataset.json` and says so on the page.
+- **Live Rows** and the per-simulation button: the Hugging Face dataset
+  viewer API (`datasets-server.huggingface.co`).
+- **Leaderboard and Results:** `static/data/leaderboard.json`, the E2
+  benchmark pools of the paper (not part of the Hugging Face release).
+
+## Updating the bundled data
+
+Regenerate `static/data/` from a FLOATBench checkout with the released
+dataset in `data/` and a merged E2 benchmark:
 
 ```bash
 python scripts/build_data.py \

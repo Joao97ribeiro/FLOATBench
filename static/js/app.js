@@ -5,11 +5,12 @@
 const HF_API = "https://datasets-server.huggingface.co";
 const HF_DATASET = "DeCoDELab/FLOATBench";
 const TOWERS = ["ref", "opt1", "opt2"];
-const TOWER_LABEL = { ref: "Reference", opt1: "Opt1", opt2: "Opt2" };
+const TOWER_LABEL = { ref: "REF", opt1: "OPT1", opt2: "OPT2" };
 const GROUP_NAME = { IT: "In-train", IP: "Interpolate", EX: "Extrapolate" };
+// FAMILY_ORDER of scripts/figures/heatmap_bars.
 const FAMILIES = [
-  "Ensemble", "NeuralNetFastAI", "NeuralNetTorch", "TabM", "CatBoost",
-  "LightGBM", "XGBoost", "RandomForest", "ExtraTrees",
+  "NeuralNet", "RandomForest", "ExtraTrees", "CatBoost", "LightGBM",
+  "XGBoost", "Ensemble", "TabM",
 ];
 
 const state = {
@@ -27,36 +28,47 @@ function css(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
+// Paper palette: floatbench/colors.py and floatbench/plots/paper_style.py.
+const PAPER = {
+  red: "#b02c27", lightRed: "#d69b99", middleRed: "#d06662", darkRed: "#932421",
+  dark2Red: "#802421", blue: "#294366", lightBlue: "#ade1f4", middleBlue: "#7cc0cd",
+  darkBlue: "#1c2b4a", grey: "#b8b8b8", greyDark: "#8f8f8f", lightGrey: "#f2f2f2",
+  darkGrey: "#555555", lightBrown: "#8f7a6e", brown: "#66574e", deepRed: "#6f1b17",
+};
+
 function theme() {
-  const dark = css("color-scheme") === "dark";
   return {
-    dark,
-    ink: css("--ink"),
-    ink2: css("--ink-2"),
-    ink3: css("--ink-3"),
-    line: css("--line"),
-    surface: css("--surface"),
-    it: css("--it"),
-    ip: css("--ip"),
-    ex: css("--ex"),
-    navy: css("--navy"),
-    red: css("--red"),
-    teal: css("--teal"),
-    tower: { ref: "#888888", opt1: "#1f77b4", opt2: "#d62728" },
+    ink: "#000000",          // axis names and panel titles
+    ink2: PAPER.darkGrey,     // legends and annotations
+    ink3: PAPER.darkGrey,     // tick labels
+    line: PAPER.lightGrey,    // grid and spines
+    it: PAPER.blue,
+    ip: PAPER.grey,
+    ipText: PAPER.greyDark,
+    ex: PAPER.red,
+    navy: PAPER.blue,
+    red: PAPER.red,
+    teal: PAPER.middleBlue,
+    train: PAPER.darkBlue,
+    tower: { ref: PAPER.grey, opt1: PAPER.blue, opt2: PAPER.red },
+    // FAMILY_COLORS in floatbench/plots/benchmark.py.
     family: {
-      Ensemble: css("--navy"),
-      NeuralNetFastAI: css("--red"),
-      NeuralNetTorch: dark ? "#e8a19c" : "#d06662",
-      TabM: dark ? "#c9867f" : "#6f1b17",
-      CatBoost: css("--teal"),
-      LightGBM: dark ? "#6fb3a0" : "#2f7d6d",
-      XGBoost: dark ? "#c7b37a" : "#9a7b2a",
-      RandomForest: dark ? "#b09f93" : "#8f7a6e",
-      ExtraTrees: dark ? "#9aa3ab" : "#6d7780",
+      NeuralNet: PAPER.blue,
+      RandomForest: PAPER.brown,
+      ExtraTrees: PAPER.middleBlue,
+      CatBoost: PAPER.lightRed,
+      LightGBM: PAPER.lightBlue,
+      XGBoost: PAPER.lightBrown,
+      Ensemble: PAPER.red,
+      TabM: PAPER.grey,
     },
-    damageScale: dark
-      ? [[0, "#1e2b3d"], [0.45, "#4f86a8"], [0.75, "#d9a45b"], [1, "#f06a5e"]]
-      : [[0, "#dfe7f1"], [0.45, "#5c93b3"], [0.75, "#d08a3a"], [1, "#b02c27"]],
+    // CUSTOM_MAP_RED_SEQ: light grey (low) to dark red (high).
+    damageScale: [
+      [0, PAPER.lightGrey], [0.2, PAPER.lightRed], [0.4, PAPER.middleRed],
+      [0.6, PAPER.red], [0.8, PAPER.darkRed], [1, PAPER.dark2Red],
+    ],
+    // Regime heatmap of scripts/figures/heatmap_bars: white, red, deep red.
+    heatScale: [[0, "#ffffff"], [0.5, PAPER.red], [1, PAPER.deepRed]],
   };
 }
 
@@ -90,16 +102,126 @@ function render(id, traces, layout) {
 }
 
 // ------------------------------------------------------------------- data --
+// log10 damage per (simulation, section), row-major, as Float32Array.
 function decodeDamage(b64) {
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return new Int16Array(bytes.buffer);
+  const packed = new Int16Array(bytes.buffer);
+  const out = new Float32Array(packed.length);
+  for (let i = 0; i < packed.length; i++) out[i] = packed[i] / 1000;
+  return out;
 }
 
 function logDamage(tower, sim, section) {
   const n = state.data.n_sections;
-  return state.damage[tower][sim * n + (section - 1)] / 1000;
+  return state.damage[tower][sim * n + (section - 1)];
+}
+
+// ------------------------------------------------ dataset from hugging face --
+const HYPARQUET = "https://cdn.jsdelivr.net/npm/hyparquet@1.31.1/+esm";
+const PARQUET_URL = (tower, split) =>
+  `https://huggingface.co/api/datasets/${HF_DATASET}/parquet/${tower}/${split}/0.parquet`;
+const GROUP_CODE = { "In-train": "IT", Interpolate: "IP", Extrapolate: "EX" };
+const INPUT_COLS = [
+  "sim_id", "wind_speed", "mean_wind_speed", "std_wind_speed", "wave_hs",
+  "wave_tp", "wind_seed_id", "wind_group", "wave_group", "damage_weight",
+];
+const TOWER_COLS = [
+  "sim_id", "section_id", "section_height_m", "section_radius_m",
+  "section_thickness_m", "damage",
+];
+
+async function readParquet(hp, tower, split, columns) {
+  const res = await fetch(PARQUET_URL(tower, split));
+  if (!res.ok) throw new Error(`${tower}/${split}: HTTP ${res.status}`);
+  const file = await res.arrayBuffer();
+  state.hfBytes += file.byteLength;
+  return hp.parquetReadObjects({ file, columns });
+}
+
+// Rebuild the explorer data (same layout as static/data/dataset.json) from
+// the train and test parquet files of the three towers on Hugging Face.
+async function datasetFromHF() {
+  const hp = await import(HYPARQUET);
+  state.hfBytes = 0;
+  const jobs = [];
+  for (const tower of TOWERS) {
+    for (const split of ["train", "test"]) {
+      const cols = tower === "ref" ? [...new Set([...INPUT_COLS, ...TOWER_COLS])] : TOWER_COLS;
+      jobs.push(readParquet(hp, tower, split, cols).then((rows) => ({ tower, split, rows })));
+    }
+  }
+  const parts = await Promise.all(jobs);
+
+  // Simulations (inputs, labels, split) from the reference tower.
+  const simRows = new Map();
+  for (const { tower, split, rows } of parts) {
+    if (tower !== "ref") continue;
+    for (const r of rows) {
+      if (!simRows.has(Number(r.sim_id))) simRows.set(Number(r.sim_id), { r, train: split === "train" ? 1 : 0 });
+    }
+  }
+  const ids = [...simRows.keys()].sort((a, b) => a - b);
+  const index = new Map(ids.map((id, i) => [id, i]));
+  const sims = {
+    sim_id: [], ws: [], mean_ws: [], std_ws: [], hs: [], tp: [], seed: [],
+    wind: [], wave: [], train: [], weight: [],
+  };
+  for (const id of ids) {
+    const { r, train } = simRows.get(id);
+    sims.sim_id.push(id);
+    sims.ws.push(Number(r.wind_speed));
+    sims.mean_ws.push(Number(r.mean_wind_speed));
+    sims.std_ws.push(Number(r.std_wind_speed));
+    sims.hs.push(Number(r.wave_hs));
+    sims.tp.push(Number(r.wave_tp));
+    sims.seed.push(Number(r.wind_seed_id));
+    sims.wind.push(GROUP_CODE[r.wind_group]);
+    sims.wave.push(GROUP_CODE[r.wave_group]);
+    sims.train.push(train);
+    sims.weight.push(Number(r.damage_weight));
+  }
+
+  let nSections = 0;
+  for (const { rows } of parts) for (const r of rows) nSections = Math.max(nSections, Number(r.section_id));
+  const towers = {};
+  const damage = {};
+  for (const tower of TOWERS) {
+    const logd = new Float32Array(ids.length * nSections).fill(NaN);
+    const geom = { height: [], radius: [], thickness: [] };
+    for (const { tower: tw, rows } of parts) {
+      if (tw !== tower) continue;
+      for (const r of rows) {
+        const i = index.get(Number(r.sim_id));
+        const k = Number(r.section_id) - 1;
+        if (i === undefined) continue;
+        logd[i * nSections + k] = Math.log10(Math.max(Number(r.damage), 1e-30));
+        if (geom.height[k] === undefined) {
+          geom.height[k] = Number(r.section_height_m);
+          geom.radius[k] = Number(r.section_radius_m);
+          geom.thickness[k] = Number(r.section_thickness_m) * 1000;
+        }
+      }
+    }
+    if (logd.some(Number.isNaN)) throw new Error(`${tower}: incomplete damage table`);
+    const lifetime = new Array(nSections).fill(0);
+    for (let i = 0; i < ids.length; i++) {
+      for (let k = 0; k < nSections; k++) {
+        lifetime[k] += Math.pow(10, logd[i * nSections + k]) * sims.weight[i];
+      }
+    }
+    towers[tower] = Object.assign(geom, { lifetime });
+    damage[tower] = logd;
+  }
+  return { data: { sims, n_sections: nSections, towers }, damage };
+}
+
+async function bundledDataset() {
+  const data = await fetch("static/data/dataset.json").then((r) => r.json());
+  const damage = {};
+  TOWERS.forEach((tw) => { damage[tw] = decodeDamage(data.towers[tw].log_damage_i16); });
+  return { data, damage };
 }
 
 function fmtSci(x, digits = 2) {
@@ -123,17 +245,17 @@ function simCategory(i, view) {
 function categories(t, view) {
   if (view === "3d") {
     return [
-      ["train", "Train", t.navy],
-      ["IT", "Test, in-train on both", t.teal],
+      ["train", "Train", t.train],
+      ["IT", "Test, in-train on both", t.it],
       ["IP", "Test, interpolate", t.ip],
-      ["EX1", "Test, extrapolate on one axis", t.dark ? "#b86560" : "#dd9c98"],
+      ["EX1", "Test, extrapolate on one axis", PAPER.lightRed],
       ["EXEX", "Test, EX_EX", t.ex],
     ];
   }
   const axisName = view === "wind" ? "wind" : "wave";
   return [
-    ["train", "Train", t.navy],
-    ["IT", `Test, ${axisName} in-train`, t.teal],
+    ["train", "Train", t.train],
+    ["IT", `Test, ${axisName} in-train`, t.it],
     ["IP", `Test, ${axisName} interpolate`, t.ip],
     ["EX", `Test, ${axisName} extrapolate`, t.ex],
   ];
@@ -211,16 +333,17 @@ function drawEnvelope() {
   } else if (color === "split") {
     const tr = idx.filter((i) => state.data.sims.train[i]);
     const te = idx.filter((i) => !state.data.sims.train[i]);
-    traces.push(trace(te, { marker: { size, color: t.ip, opacity: 0.55 } }));
-    traces.push(trace(tr, { marker: { size, color: t.navy, opacity: 0.95 } }));
-    legend.innerHTML = `<span><i style="background:${t.navy}"></i>Train (${tr.length})</span><span><i style="background:${t.ip}"></i>Test (${te.length})</span>`;
+    traces.push(trace(te, { marker: { size, color: t.ip, opacity: 0.7 } }));
+    traces.push(trace(tr, { marker: { size, color: t.train, opacity: 0.95, symbol: is3d ? "diamond" : "x" } }));
+    legend.innerHTML = `<span><i style="background:${t.train}"></i>Train (${tr.length})</span><span><i style="background:${t.ip}"></i>Test (${te.length})</span>`;
   } else {
     const cats = categories(t, view);
     const html = [];
     for (const [key, label, col] of cats) {
       const ids = idx.filter((i) => simCategory(i, view) === key);
       if (!ids.length) continue;
-      traces.push(trace(ids, { marker: { size, color: col, opacity: key === "train" ? 0.95 : 0.8 } }));
+      const symbol = key === "train" ? (is3d ? "diamond" : "x") : "circle";
+      traces.push(trace(ids, { marker: { size, color: col, symbol, opacity: key === "train" ? 0.95 : 0.8 } }));
       html.push(`<span><i style="background:${col}"></i>${label} (${ids.length})</span>`);
     }
     legend.innerHTML = html.join("");
@@ -326,28 +449,6 @@ function drawProfile() {
     .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
 }
 
-function drawLifetime() {
-  const t = theme();
-  const traces = TOWERS.map((tw) => ({
-    x: state.data.towers[tw].lifetime,
-    y: state.data.towers[tw].height,
-    mode: "lines+markers",
-    name: TOWER_LABEL[tw],
-    line: { color: t.tower[tw], width: 2.4 },
-    marker: { size: 4 },
-    hovertemplate: `${TOWER_LABEL[tw]}<br>%{y:.1f} m: D = %{x:.3f}<extra></extra>`,
-  }));
-  const layout = baseLayout(t, {
-    xaxis: axis(t, "25-year fatigue damage D [-] (log)", { type: "log", exponentformat: "power" }),
-    yaxis: axis(t, "Section height [m]"),
-    showlegend: true,
-    legend: { orientation: "h", x: 0, y: -0.22, font: { color: t.ink2 } },
-    margin: { l: 58, r: 16, t: 24, b: 80 },
-    shapes: [{ type: "line", yref: "paper", x0: 1, x1: 1, y0: 0, y1: 1, line: { color: t.ex, width: 1.2, dash: "dash" } }],
-    annotations: [{ x: 0, xref: "x", y: 1, yref: "paper", text: "D = 1", showarrow: false, xanchor: "left", yanchor: "bottom", font: { color: t.ex, size: 11 } }],
-  });
-  render("plot-lifetime", traces, layout);
-}
 
 function selectSim(i) {
   state.sel = i;
@@ -388,7 +489,6 @@ function initExplorer() {
   updateSectionLabel();
   drawEnvelope();
   drawProfile();
-  drawLifetime();
 }
 
 // ------------------------------------------------------------ hugging face --
@@ -615,7 +715,7 @@ function drawHeat() {
   const trace = {
     type: "heatmap", z, zmin: lo, zmax: hi,
     x: order.map((o) => `wave ${o}`), y: order.map((o) => `wind ${o}`),
-    colorscale: t.damageScale, showscale: false,
+    colorscale: t.heatScale, showscale: false,
     text: z.map((row) => row.map((v) => v.toFixed(3))),
     texttemplate: "%{text}", textfont: { family: "Helvetica, Arial, sans-serif", size: 12 },
     hovertemplate: "%{y} × %{x}<br>Rel L² DEL %{z:.4f}<extra></extra>",
@@ -654,57 +754,6 @@ function recolorChips() {
   });
 }
 
-// --------------------------------------------------------------- findings --
-function drawFindings() {
-  const t = theme();
-  const models = [
-    ["WeightedEnsemble_L2", "Ensemble (global rank-1)", t.navy],
-    ["NeuralNetFastAI_r102_BAG_L1", "NeuralNetFastAI_r102 (EX_EX rank-1)", t.red],
-  ];
-  const traces = [];
-  for (const [m, label, col] of models) {
-    const xs = [], ys = [], text = [];
-    TOWERS.forEach((tw) => {
-      const rows = state.lb[tw];
-      const g = rankBy(rows, "Global"), e = rankBy(rows, "EX_EX");
-      const r = rows.filter((x) => x.model === m).sort((a, b) => g.get(a) - g.get(b))[0];
-      xs.push(g.get(r), e.get(r), null);
-      ys.push(TOWER_LABEL[tw], TOWER_LABEL[tw], null);
-      text.push(`Global #${g.get(r)}`, `EX_EX #${e.get(r)}`, "");
-    });
-    traces.push({
-      type: "scatter", mode: "lines+markers", name: label, x: xs, y: ys, text,
-      hovertemplate: `${label}<br>%{y}: %{text}<extra></extra>`,
-      line: { color: col, width: 2 },
-      marker: { size: 10, color: col, symbol: xs.map((_, k) => (k % 3 === 0 ? "circle-open" : "circle")) },
-      connectgaps: false,
-    });
-  }
-  render("plot-findings-e2", traces, baseLayout(t, {
-    xaxis: axis(t, "Rank in the pool (open = Global, filled = EX_EX)", { range: [0, 100] }),
-    yaxis: axis(t, "", { autorange: "reversed" }),
-    showlegend: true,
-    legend: { orientation: "h", x: 0, y: 1.22, font: { color: t.ink2 } },
-    margin: { l: 52, r: 16, t: 40, b: 48 },
-  }));
-
-  const folds = ["Ref+Opt1 → Opt2", "Ref+Opt2 → Opt1", "Opt1+Opt2 → Ref"];
-  const vals = [0.067, 0.098, 0.423];
-  render("plot-findings-e3", [{
-    type: "bar", orientation: "h", y: folds, x: vals,
-    marker: { color: [t.navy, t.navy, t.red] },
-    text: vals.map((v) => v.toFixed(3)), textposition: "outside",
-    textfont: { family: "Helvetica, Arial, sans-serif", color: t.ink },
-    hovertemplate: "%{y}<br>rank-1 Rel L² DEL %{x:.3f}<extra></extra>",
-    cliponaxis: false,
-  }], baseLayout(t, {
-    xaxis: axis(t, "Rank-1 Rel L² DEL on the held-out tower", { range: [0, 0.5] }),
-    yaxis: axis(t, "", { autorange: "reversed" }),
-    margin: { l: 130, r: 30, t: 20, b: 48 },
-    bargap: 0.45,
-  }));
-}
-
 // ------------------------------------------------------------------ misc --
 function initCopy() {
   const btn = document.getElementById("copy-bibtex");
@@ -741,10 +790,8 @@ function initNav() {
 }
 
 function redrawAll() {
-  if (!state.data || !state.lb) return;
-  recolorChips();
-  drawEnvelope(); drawProfile(); drawLifetime();
-  drawLeaderboard(); drawFindings();
+  if (state.data) { drawEnvelope(); drawProfile(); }
+  if (state.lb) { recolorChips(); drawLeaderboard(); }
 }
 
 function watchTheme() {
@@ -752,22 +799,34 @@ function watchTheme() {
   new MutationObserver(redrawAll).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 }
 
+async function loadDataset() {
+  const note = document.getElementById("ex-source");
+  const hfLink = `<a href="https://huggingface.co/datasets/${HF_DATASET}">${HF_DATASET}</a>`;
+  let loaded;
+  try {
+    loaded = await datasetFromHF();
+    note.innerHTML = `<span class="icon"><i class="fas fa-circle-check"></i></span> Loaded live from ${hfLink} `
+      + `(6 parquet files, ${(state.hfBytes / 1e6).toFixed(1)} MB).`;
+  } catch (err) {
+    loaded = await bundledDataset();
+    note.innerHTML = `Hugging Face could not be reached (${err.message}), so the explorer shows the copy of ${hfLink} bundled with this page.`;
+  }
+  state.data = loaded.data;
+  state.damage = loaded.damage;
+  initRegimeGrid();
+  initExplorer();
+}
+
 async function main() {
   initCopy();
   initNav();
   initHF();
-  const [data, lb] = await Promise.all([
-    fetch("static/data/dataset.json").then((r) => r.json()),
-    fetch("static/data/leaderboard.json").then((r) => r.json()),
-  ]);
-  state.data = data;
-  state.lb = lb;
-  TOWERS.forEach((tw) => { state.damage[tw] = decodeDamage(data.towers[tw].log_damage_i16); });
-  initRegimeGrid();
-  initExplorer();
-  initLeaderboard();
-  drawFindings();
   watchTheme();
+  const lbReady = fetch("static/data/leaderboard.json").then((r) => r.json()).then((lb) => {
+    state.lb = lb;
+    initLeaderboard();
+  });
+  await Promise.all([lbReady, loadDataset()]);
 }
 
 if (document.readyState === "loading") {

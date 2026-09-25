@@ -121,11 +121,66 @@
   </div>
 </section>
 
+<!-- ============ DATASET ============ -->
+<section class="section" id="dataset">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Dataset</h2>
+    <div class="content has-text-justified">
+      <p>FLOATBench covers three 22 MW floating tower geometries: the IEA-22-280-RWT reference tower (<span class="tw-ref">REF</span>) and two fatigue redesigns produced with <a href="https://joao97ribeiro.github.io/FLOAT/">FLOAT</a> (<span class="tw-opt1">OPT1</span>, <span class="tw-opt2">OPT2</span>). Each tower is simulated in OpenFAST over the same operating envelope: 22 wind speeds × 7 significant wave heights × 7 peak periods = 1,078 aligned wind–wave conditions, each with 6 turbulence seeds (6,468 simulations of 600 s). Fatigue damage is computed at 30 tower sections, from the base (section 1) to the top (section 30), giving 194,040 labels per tower and 582,120 in total.</p>
+    </div>
+    <figure class="image" style="margin-bottom:0.5rem;">
+      <img src="figures/figure_geom_damage.png" alt="Outer diameter, wall thickness and lifetime damage of the three towers">
+    </figure>
+    <p class="is-size-7 has-text-grey" style="margin-bottom:2rem;">Outer diameter, wall thickness and 25-year fatigue damage along the height of the three towers. REF reaches a lifetime damage of about 32 at the base (failure at <em>D</em> = 1); the redesigns bring it close to 1.</p>
+
+    <h3 class="title is-5">Files (per tower, on Hugging Face)</h3>
+    <div class="table-container">
+      <table class="table is-narrow is-fullwidth schema">
+        <thead><tr><th>File</th><th class="num">Rows</th><th class="num">Columns</th><th>Content</th></tr></thead>
+        <tbody>
+          <tr><td><code>train_damage.csv</code></td><td class="num">51,840</td><td class="num">18</td><td>288 training conditions × 6 seeds × 30 sections, all In-train</td></tr>
+          <tr><td><code>test_damage.csv</code></td><td class="num">142,200</td><td class="num">18</td><td>790 test conditions × 6 seeds × 30 sections, with regime labels</td></tr>
+          <tr><td><code>data.csv</code></td><td class="num">194,040</td><td class="num">16</td><td>All simulations without split or regime labels</td></tr>
+          <tr><td><code>metadata.json</code></td><td class="num"></td><td class="num"></td><td>Counts and split summary</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 class="title is-5" style="margin-top:1.5rem;">Columns</h3>
+    <div class="table-container">
+      <table class="table is-narrow is-fullwidth schema">
+        <thead><tr><th>Group</th><th>Column</th><th>Meaning</th></tr></thead>
+        <tbody>
+          <tr><td rowspan="6" class="grp">Identifiers</td><td><code>sim_id</code></td><td>Simulation identifier; ties together the 30 sections of one run</td></tr>
+          <tr><td><code>section_id</code></td><td>Tower section, 1 (base) to 30 (top)</td></tr>
+          <tr><td><code>wind_speed_id</code></td><td>Wind-speed grid index, 1 to 22</td></tr>
+          <tr><td><code>wave_hs_id</code></td><td>Wave-height grid index, 1 to 7</td></tr>
+          <tr><td><code>wave_tp_id</code></td><td>Peak-period grid index, 1 to 7</td></tr>
+          <tr><td><code>wind_seed_id</code></td><td>Turbulence seed, 1 to 6</td></tr>
+          <tr><td rowspan="5" class="grp">Inputs: wind and waves</td><td><code>wind_speed</code></td><td>Nominal hub-height wind speed (m/s)</td></tr>
+          <tr><td><code>mean_wind_speed</code></td><td>Realised 10-min mean hub-height wind speed (m/s)</td></tr>
+          <tr><td><code>std_wind_speed</code></td><td>Realised 10-min standard deviation of hub-height wind speed (m/s)</td></tr>
+          <tr><td><code>wave_hs</code></td><td>Significant wave height (m)</td></tr>
+          <tr><td><code>wave_tp</code></td><td>Wave peak period (s)</td></tr>
+          <tr><td rowspan="3" class="grp">Inputs: tower section</td><td><code>section_height_m</code></td><td>Section midpoint height along the tower (m)</td></tr>
+          <tr><td><code>section_radius_m</code></td><td>Section outer radius (m)</td></tr>
+          <tr><td><code>section_thickness_m</code></td><td>Section wall thickness (m)</td></tr>
+          <tr><td rowspan="2" class="grp">Regime labels</td><td><code>wind_group</code></td><td><span class="tag tag-it">In-train</span> <span class="tag tag-ip">Interpolate</span> <span class="tag tag-ex">Extrapolate</span> in the wind plane</td></tr>
+          <tr><td><code>wave_group</code></td><td>The same labels in the wave plane</td></tr>
+          <tr><td rowspan="2" class="grp">Targets</td><td><code>damage</code></td><td>Miner-summed fatigue damage of the section in one 600 s simulation (dimensionless)</td></tr>
+          <tr><td><code>damage_weight</code></td><td>Expected number of 600 s windows the simulation represents over the 25-year life (occurrence probability × 1,314,000). Lifetime damage of a section = Σ <code>damage</code> × <code>damage_weight</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
 <!-- ============ DATASET EXPLORER ============ -->
-<section class="section" id="explorer">
+<section class="section has-background-light" id="explorer">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Dataset Explorer</h2>
     <p class="subtitle is-6">All 6,468 simulations of the operating envelope, with the fatigue damage each one produces at every tower section. Pick a view, colour the points by regime or by damage, and click any simulation to see its damage along the tower for the three geometries.</p>
+    <p class="is-size-7 has-text-grey" id="ex-source" style="margin-top:-0.75rem;margin-bottom:1rem;"><span class="icon"><i class="fas fa-spinner fa-spin"></i></span> Loading the dataset from Hugging Face (DeCoDELab/FLOATBench)…</p>
 
     <div class="box">
       <div class="columns is-multiline is-vcentered">
@@ -153,9 +208,9 @@
           <label class="label is-small" for="ex-tower">Tower</label>
           <div class="select is-fullwidth is-small">
             <select id="ex-tower">
-              <option value="ref">Reference (IEA 22 MW)</option>
-              <option value="opt1">Opt1</option>
-              <option value="opt2">Opt2</option>
+              <option value="ref">REF (IEA 22 MW reference)</option>
+              <option value="opt1">OPT1</option>
+              <option value="opt2">OPT2</option>
             </select>
           </div>
         </div>
@@ -176,9 +231,11 @@
       <div class="column is-7">
         <div id="plot-envelope" class="plot plot-tall"></div>
         <div class="legend-row" id="ex-legend"></div>
+        <p class="how"><strong>How to read.</strong> Each point is one 600 s OpenFAST simulation. In the 3D view the axes are the three envelope inputs; the six seeds of a condition sit side by side because their realised mean wind speed differs slightly. Colour by regime to see which simulations are used for training and how far each test point lies from them; colour by damage to see how fatigue grows with wind and waves. Drag to rotate, scroll to zoom, click a point to select it.</p>
       </div>
       <div class="column is-5">
         <div id="plot-profile" class="plot plot-tall"></div>
+        <p class="how"><strong>How to read.</strong> Damage of the selected simulation at each of the 30 sections, for the three towers under the same wind and waves (log scale: each labelled power of ten is 10× the previous one). The dotted line marks the section chosen with the slider.</p>
         <dl class="sim-card" id="sim-card"></dl>
         <button class="button is-rounded is-dark is-small" id="sim-hf" type="button">
           <span class="icon"><i class="fas fa-database"></i></span><span>Load its 30 rows from Hugging Face</span>
@@ -186,15 +243,11 @@
         <div class="is-size-7" id="sim-hf-status" style="margin-top:0.6rem;"></div>
       </div>
     </div>
-
-    <h3 class="title is-5" style="margin-top:2rem;">Lifetime damage along the tower</h3>
-    <p class="is-size-6 has-text-grey">Sum of damage × <code>damage_weight</code> over the 6,468 simulations of each tower: the 25-year fatigue damage per section. <em>D</em> = 1 is the admissible limit.</p>
-    <div id="plot-lifetime" class="plot"></div>
   </div>
 </section>
 
 <!-- ============ LIVE ROWS ============ -->
-<section class="section has-background-light" id="hf">
+<section class="section" id="hf">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Live Rows from Hugging Face</h2>
     <p class="subtitle is-6">Read directly from <a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench">DeCoDELab/FLOATBench</a> through the Hugging Face dataset viewer API. Every row is one tower section of one simulation.</p>
@@ -252,7 +305,7 @@ hf download DeCoDELab/FLOATBench \
 </section>
 
 <!-- ============ REGIME SPLIT ============ -->
-<section class="section" id="split">
+<section class="section has-background-light" id="split">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Regime-Aware Split</h2>
     <div class="content has-text-justified">
@@ -273,7 +326,7 @@ hf download DeCoDELab/FLOATBench \
 </section>
 
 <!-- ============ LEADERBOARD ============ -->
-<section class="section has-background-light" id="leaderboard">
+<section class="section" id="leaderboard">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Leaderboard</h2>
     <p class="subtitle is-6">Within-tower benchmark (E2): every surrogate of the AutoGluon <code>best</code> and <code>extreme</code> pools, scored by relative L² error on the damage equivalent load (Rel L² DEL, lower is better). Switch the regime to see how the ranking changes when only extrapolation points count. Click a row to see its error across the nine regime cells.</p>
@@ -283,7 +336,7 @@ hf download DeCoDELab/FLOATBench \
         <div class="column is-2">
           <label class="label is-small" for="lb-tower">Tower</label>
           <div class="select is-fullwidth is-small">
-            <select id="lb-tower"><option value="ref">Reference</option><option value="opt1">Opt1</option><option value="opt2">Opt2</option></select>
+            <select id="lb-tower"><option value="ref">REF</option><option value="opt1">OPT1</option><option value="opt2">OPT2</option></select>
           </div>
         </div>
         <div class="column is-4">
@@ -324,7 +377,9 @@ hf download DeCoDELab/FLOATBench \
       </div>
       <div class="column is-5">
         <div id="plot-crossover" class="plot"></div>
+        <p class="how"><strong>How to read.</strong> One point per model. On the dotted diagonal a model keeps its Global rank in the selected regime. Points far below the diagonal rank much better in that regime than globally; points far above rank much worse. With EX_EX selected, the networks that win in extrapolation sit bottom right.</p>
         <div id="plot-heat" class="plot plot-short"></div>
+        <p class="how"><strong>How to read.</strong> Rel L² DEL of the selected model in each of the nine regime cells (rows: wind label, columns: wave label). Darker red means larger error. Click a table row or a point above to change the model.</p>
       </div>
     </div>
     <p class="is-size-7 has-text-grey">Point estimates on the full test set. Condition-level bootstrap intervals are produced by <code>scripts/leaderboard/</code>. Rank changes are relative to the Global ranking of the same pool.</p>
@@ -332,22 +387,24 @@ hf download DeCoDELab/FLOATBench \
 </section>
 
 <!-- ============ FINDINGS ============ -->
-<section class="section" id="findings">
+<section class="section has-background-light" id="findings">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Results</h2>
     <div class="columns">
       <div class="column is-half">
         <div class="box">
           <p class="title is-5">Within tower (E2): the global winner loses in wind-and-wave extrapolation</p>
-          <p>The global rank-1 <code>WeightedEnsemble_L2</code> drops to EX_EX ranks 23 / 11 / 11 (Reference / Opt1 / Opt2). The EX_EX rank-1 <code>NeuralNetFastAI_r102_BAG_L1</code> sits at global ranks 79 / 73 / 69. The crossover holds under every partition setting that keeps an extrapolation region, after retraining on two alternative grids and against standalone baselines. Validation-based model selection does not recover it.</p>
-          <div id="plot-findings-e2" class="plot plot-short"></div>
+          <p>The global rank-1 <code>WeightedEnsemble_L2</code> drops to EX_EX ranks 23 / 11 / 11 (REF / OPT1 / OPT2). The EX_EX rank-1 <code>NeuralNetFastAI_r102_BAG_L1</code> sits at global ranks 79 / 73 / 69. The crossover holds under every partition setting that keeps an extrapolation region, after retraining on two alternative grids and against standalone baselines. Validation-based model selection does not recover it.</p>
+          <figure class="image" style="margin-top:1rem;"><img src="figures/crossover.png" alt="Global and EX_EX Rel L2 DEL of the Global rank-1 and EX_EX rank-1 models on the three towers"></figure>
+          <p class="how">Rel L² DEL of the two models on all test points (Global) and on the EX_EX cell only. The lines cross on every tower: the model that wins globally is not the one that wins in extrapolation.</p>
         </div>
       </div>
       <div class="column is-half">
         <div class="box">
           <p class="title is-5">Cross tower (E3): transfer collapses on geometries far from training</p>
-          <p>Training on a set that includes the reference tower generalizes to the redesigned towers: rank-1 Rel L² DEL is 0.067 (Ref+Opt1 → Opt2) and 0.098 (Ref+Opt2 → Opt1). Training without it (Opt1+Opt2 → Ref) reaches 0.423, a 4 to 6× increase.</p>
-          <div id="plot-findings-e3" class="plot plot-short"></div>
+          <p>Training on a set that includes the reference tower generalizes to the redesigned towers: rank-1 Rel L² DEL is 0.067 (REF+OPT1 → OPT2) and 0.098 (REF+OPT2 → OPT1). Training without it (OPT1+OPT2 → REF) reaches 0.423, a 4 to 6× increase.</p>
+          <figure class="image" style="margin-top:1rem;"><img src="figures/cross_tower.png" alt="Rank-1 Rel L2 DEL per cross-tower fold"></figure>
+          <p class="how">Each bar trains on two towers and tests on the third (colour of the held-out tower); the best model of each fold is named below its bar.</p>
         </div>
       </div>
     </div>
@@ -355,7 +412,7 @@ hf download DeCoDELab/FLOATBench \
 </section>
 
 <!-- ============ RESOURCES ============ -->
-<section class="section has-background-light">
+<section class="section">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Resources</h2>
     <div class="columns is-multiline">
@@ -380,7 +437,7 @@ hf download DeCoDELab/FLOATBench \
       <div class="column is-half">
         <div class="box">
           <p class="title is-5"><i class="fas fa-water"></i> &nbsp;<a href="https://joao97ribeiro.github.io/FLOAT/">FLOAT (design framework)</a></p>
-          <p>The fatigue-aware tower design framework that produced the Opt1 and Opt2 geometries of FLOATBench.</p>
+          <p>The fatigue-aware tower design framework that produced the OPT1 and OPT2 geometries of FLOATBench.</p>
         </div>
       </div>
     </div>
@@ -388,7 +445,7 @@ hf download DeCoDELab/FLOATBench \
 </section>
 
 <!-- ============ CITATION ============ -->
-<section class="section">
+<section class="section has-background-light">
   <div class="container is-max-desktop">
     <div class="level is-mobile" style="margin-bottom:1rem;">
       <div class="level-left">
@@ -415,7 +472,7 @@ hf download DeCoDELab/FLOATBench \
 </section>
 
 <!-- ============ ACKNOWLEDGEMENTS ============ -->
-<section class="section has-background-light">
+<section class="section">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Acknowledgements</h2>
     <div class="content has-text-justified">

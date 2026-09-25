@@ -1,0 +1,136 @@
+/* FLOATBench project page custom styles (same base as the FLOAT page) */
+
+:root {
+  --ink: #363636;
+  --ink-2: #4a4a4a;
+  --ink-3: #7a7a7a;
+  --line: #e2e8f0;
+  --navy: #294366;
+  --red: #b02c27;
+  --teal: #7cc0cd;
+  --it: #294366;
+  --ip: #9a9a9a;
+  --ex: #b02c27;
+}
+
+.publication-title {
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.publication-authors a {
+  color: #1d3557;
+}
+
+.publication-links .button {
+  margin: 0.25rem;
+}
+
+.box {
+  height: 100%;
+}
+
+pre code {
+  font-size: 0.85rem;
+}
+
+.hero.is-light img {
+  border-radius: 8px;
+}
+
+/* ---------- highlights ---------- */
+.highlights {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.highlight {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0 !important;
+}
+
+.highlight .title {
+  margin-bottom: 1.25rem !important;
+}
+
+/* ---------- plots ---------- */
+.plot { width: 100%; height: 380px; }
+.plot-tall { height: 480px; }
+.plot-short { height: 280px; }
+
+.legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font-size: 0.82rem;
+  color: var(--ink-2);
+}
+
+.legend-row span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.legend-row i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+.sim-card {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem 0.75rem;
+  margin: 0.5rem 0 0.9rem;
+  font-size: 0.85rem;
+}
+
+.sim-card div { display: flex; flex-direction: column; }
+.sim-card dt { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3); }
+.sim-card dd { margin: 0; font-family: monospace; font-variant-numeric: tabular-nums; }
+
+/* ---------- tables ---------- */
+table.data { font-size: 0.82rem; font-variant-numeric: tabular-nums; background: transparent; }
+table.data th, table.data td { text-align: right !important; white-space: nowrap; }
+table.data th.l, table.data td.l { text-align: left !important; }
+table.data td.mono { font-family: monospace; }
+.table-container { max-height: 560px; overflow: auto; }
+.lb-table-wrap { max-height: 680px; }
+table.lb tbody tr { cursor: pointer; }
+table.lb tbody tr.sel { background: #e8eef5; }
+.fam-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.up { color: var(--it); font-weight: 600; }
+.down { color: var(--ex); font-weight: 600; }
+
+.tag.tag-it, .tag.tag-ip, .tag.tag-ex { color: #fff; font-weight: 600; }
+.tag.tag-it { background: var(--it); }
+.tag.tag-ip { background: var(--ip); }
+.tag.tag-ex { background: var(--ex); }
+
+/* ---------- family chips ---------- */
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+.chip {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; color: var(--ink-2);
+  padding: 0.25rem 0.75rem; border-radius: 999px;
+  border: 1px solid #dbdbdb; background: #fff; cursor: pointer;
+}
+.chip[aria-pressed="false"] { opacity: 0.4; }
+.chip .dot { width: 9px; height: 9px; border-radius: 50%; }
+
+/* ---------- regime grid ---------- */
+.regime-grid { display: grid; grid-template-columns: auto repeat(3, 1fr); gap: 4px; font-size: 0.82rem; }
+.regime-grid .h { font-size: 0.72rem; color: var(--ink-3); align-self: center; padding: 4px; }
+.regime-grid .c { border-radius: 6px; padding: 0.6rem; background: #f5f5f5; display: flex; flex-direction: column; }
+.regime-grid .c b { font-size: 1.3rem; font-variant-numeric: tabular-nums; color: var(--navy); }
+.regime-grid .c span { color: var(--ink-3); font-size: 0.72rem; }
+.regime-grid .c.deep { background: #f6e3e2; }
+.regime-grid .c.deep b { color: var(--red); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1023px) {
+  .highlights { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .highlights { grid-template-columns: 1fr 1fr; }
+  .sim-card { grid-template-columns: repeat(2, 1fr); }
+  .plot-tall { height: 400px; }
+}

@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FLOATBench: A Dataset and Benchmark for Floating Offshore Wind Turbine Tower Fatigue</title>
+  <meta name="description" content="FLOATBench: a tabular dataset and regime-aware benchmark for fatigue prediction on 22 MW floating offshore wind turbine towers.">
+  <meta property="og:title" content="FLOATBench: A Dataset and Benchmark for Floating Offshore Wind Turbine Tower Fatigue">
+  <meta property="og:description" content="582,120 section-level fatigue damage labels, a regime-aware split and an interactive leaderboard of tabular surrogates.">
+  <meta property="og:image" content="figures/overview.png">
+  <link rel="icon" type="image/png" href="figures/logo.png">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="static/css/style.css">
+  <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script defer src="static/js/app.js"></script>
+</head>
+<body>
+
+<!-- ============ HERO ============ -->
+<section class="hero is-light">
+  <div class="hero-body has-text-centered">
+    <div class="container is-max-desktop">
+      <img src="figures/logo.png" alt="FLOATBench logo" style="max-width:320px;margin:0 auto 1rem;display:block;">
+      <h1 class="title is-2 publication-title" style="margin-bottom:1.5rem;">
+        FLOATBench: A Dataset and Benchmark for Floating Offshore Wind Turbine Tower Fatigue
+      </h1>
+      <div class="is-size-5 publication-authors">
+        <span class="author-block"><a href="mailto:jpar@mit.edu">João Alves Ribeiro</a><sup>1</sup>,</span>
+        <span class="author-block">Bruno Alves Ribeiro<sup>2,3</sup>,</span>
+        <span class="author-block">Francisco Pimenta<sup>4</sup>,</span>
+        <span class="author-block">Sérgio M. O. Tavares<sup>5</sup>,</span>
+        <span class="author-block"><a href="mailto:faez@mit.edu">Faez Ahmed</a><sup>1</sup></span>
+      </div>
+      <div class="is-size-6 publication-affiliations" style="margin-top:0.4rem;">
+        <span><sup>1</sup>MIT</span> &nbsp;
+        <span><sup>2</sup>TU Delft</span> &nbsp;
+        <span><sup>3</sup>Brown University</span> &nbsp;
+        <span><sup>4</sup>University of Porto</span> &nbsp;
+        <span><sup>5</sup>University of Aveiro</span>
+      </div>
+
+      <div class="publication-links" style="margin-top:1.5rem;">
+        <a href="https://arxiv.org/abs/2605.25717" class="button is-rounded is-dark">
+          <span class="icon"><i class="fas fa-file-pdf"></i></span><span>Paper</span>
+        </a>
+        <a href="https://arxiv.org/abs/2605.25717" class="button is-rounded is-dark">
+          <span class="icon"><i class="fas fa-archive"></i></span><span>arXiv</span>
+        </a>
+        <a href="https://github.com/Joao97ribeiro/FLOATBench" class="button is-rounded is-dark">
+          <span class="icon"><i class="fab fa-github"></i></span><span>Code</span>
+        </a>
+        <a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench" class="button is-rounded is-dark">
+          <span class="icon"><i class="fas fa-database"></i></span><span>Dataset</span>
+        </a>
+        <a href="#leaderboard" class="button is-rounded is-dark">
+          <span class="icon"><i class="fas fa-trophy"></i></span><span>Leaderboard</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PAPER HIGHLIGHTS ============ -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="has-text-centered" style="margin:0 0 1.5rem;padding:0.85rem 0;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
+      <i class="fas fa-database" style="color:#c05621;margin-right:0.6rem;"></i>
+      <span style="text-transform:uppercase;letter-spacing:0.1em;color:#c05621;font-size:0.75rem;font-weight:700;">Dataset on Hugging Face</span>
+      &nbsp;&nbsp;
+      <span style="color:#2d3748;">load it with one line:
+        <code>load_dataset("DeCoDELab/FLOATBench", "ref")</code>
+      </span>
+      <span style="color:#cbd5e0;margin:0 0.5rem;">·</span>
+      <a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench" style="color:#718096;font-size:0.85rem;white-space:nowrap;">Open on HF →</a>
+    </div>
+
+    <p class="has-text-centered" style="font-size:1.25rem;font-style:italic;color:#2d3748;margin-bottom:2rem;font-weight:500;">
+      A regime-aware benchmark that shows where tabular fatigue surrogates stop being reliable.
+    </p>
+    <figure class="image" style="margin-bottom:1.5rem;">
+      <img src="figures/overview.png" alt="FLOATBench overview: dataset of three towers, regime-aware split, benchmark protocols">
+    </figure>
+
+    <h2 class="title is-3 has-text-centered" style="margin-bottom:2rem;">Paper Highlights</h2>
+    <div class="highlights">
+      <div class="box has-text-centered highlight">
+        <p class="title is-3" style="color:#b02c27;">582,120</p>
+        <p class="subtitle is-6">section-level fatigue damage labels on three 22 MW towers</p>
+      </div>
+      <div class="box has-text-centered highlight">
+        <p class="title is-3" style="color:#294366;">19,404</p>
+        <p class="subtitle is-6">OpenFAST simulations (1,078 wind–wave states × 6 seeds per tower)</p>
+      </div>
+      <div class="box has-text-centered highlight">
+        <p class="title is-3" style="color:#b02c27;">3 × 3</p>
+        <p class="subtitle is-6">regime cells: in-train, interpolation and extrapolation on wind × wave</p>
+      </div>
+      <div class="box has-text-centered highlight">
+        <p class="title is-3" style="color:#294366;">1 → 23</p>
+        <p class="subtitle is-6">global rank-1 model in joint wind-and-wave extrapolation</p>
+      </div>
+      <div class="box has-text-centered highlight">
+        <p class="title is-3" style="color:#7cc0cd;">Open</p>
+        <p class="subtitle is-6">dataset, harness and 735 trained surrogates released</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ABSTRACT ============ -->
+<section class="section has-background-light">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Abstract</h2>
+    <div class="content has-text-justified">
+      <p>Most of the world's offshore wind resource lies in waters too deep for fixed-bottom foundations, making floating offshore wind turbines (FOWTs) essential for deep-water deployment. As the industry scales toward 22 MW class designs, tower fatigue becomes increasingly critical because larger structures amplify the coupled aero-hydro-servo-elastic loads induced by continuous wind and wave excitation. Accurate fatigue-damage prediction is therefore central to certification, design optimization, and cost reduction. Yet the field lacks a shared surrogate benchmark: studies report different simulations, splits, and metrics, making methods difficult to compare.</p>
+      <p>We present <strong>FLOATBench</strong>, a public tabular benchmark with 582,120 per-section fatigue-damage labels across three 22 MW FOWT tower geometries, derived from 19,404 high-fidelity OpenFAST simulations across the three towers (6,468 per tower: 1,078 aligned wind/wave operating points × six turbulence seeds), labeled at 30 cross-sections per tower. <strong>FLOATBench</strong> includes a regime-aware alpha-shape partition of the joint wind/wave operating envelope, stratifying test points into in-train, interpolation, and extrapolation regimes. It is paired with a reproducible evaluation harness covering three protocol levels: random validation (E1), within-tower regime-aware evaluation (E2), and cross-tower transfer (E3).</p>
+      <p>The regime-aware protocol reveals rank shifts between global and extrapolation performance that random-split leaderboards cannot detect. To the authors' knowledge, <strong>FLOATBench</strong> is the first FOWT fatigue benchmark for tabular surrogate modeling, and offers an evaluation protocol that generalizes to engineering surrogates defined over physical operating envelopes.</p>
+      <p>The <code>opt1</code> and <code>opt2</code> towers are fatigue redesigns of the IEA 22 MW reference tower produced with <a href="https://joao97ribeiro.github.io/FLOAT/">FLOAT</a>.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ DATASET EXPLORER ============ -->
+<section class="section" id="explorer">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Dataset Explorer</h2>
+    <p class="subtitle is-6">All 6,468 simulations of the operating envelope, with the fatigue damage each one produces at every tower section. Pick a view, colour the points by regime or by damage, and click any simulation to see its damage along the tower for the three geometries.</p>
+
+    <div class="box">
+      <div class="columns is-multiline is-vcentered">
+        <div class="column is-one-third">
+          <label class="label is-small" for="ex-view">View</label>
+          <div class="select is-fullwidth is-small">
+            <select id="ex-view">
+              <option value="3d">Envelope 3D (U, Hs, Tp)</option>
+              <option value="wind">Wind plane (mean U, std U)</option>
+              <option value="wave">Wave plane (Hs, Tp)</option>
+            </select>
+          </div>
+        </div>
+        <div class="column is-one-third">
+          <label class="label is-small" for="ex-color">Colour by</label>
+          <div class="select is-fullwidth is-small">
+            <select id="ex-color">
+              <option value="regime">Regime (wind × wave)</option>
+              <option value="split">Train / test</option>
+              <option value="damage">Damage at section</option>
+            </select>
+          </div>
+        </div>
+        <div class="column is-one-third">
+          <label class="label is-small" for="ex-tower">Tower</label>
+          <div class="select is-fullwidth is-small">
+            <select id="ex-tower">
+              <option value="ref">Reference (IEA 22 MW)</option>
+              <option value="opt1">Opt1</option>
+              <option value="opt2">Opt2</option>
+            </select>
+          </div>
+        </div>
+        <div class="column is-one-third">
+          <label class="label is-small" for="ex-ws">Wind speed</label>
+          <div class="select is-fullwidth is-small">
+            <select id="ex-ws"><option value="all">All 22 levels</option></select>
+          </div>
+        </div>
+        <div class="column is-two-thirds">
+          <label class="label is-small" for="ex-sec">Section <output id="ex-sec-out">1</output> <span class="has-text-grey" id="ex-sec-h"></span></label>
+          <input type="range" id="ex-sec" min="1" max="30" value="1" style="width:100%;">
+        </div>
+      </div>
+    </div>
+
+    <div class="columns">
+      <div class="column is-7">
+        <div id="plot-envelope" class="plot plot-tall"></div>
+        <div class="legend-row" id="ex-legend"></div>
+      </div>
+      <div class="column is-5">
+        <div id="plot-profile" class="plot plot-tall"></div>
+        <dl class="sim-card" id="sim-card"></dl>
+        <button class="button is-rounded is-dark is-small" id="sim-hf" type="button">
+          <span class="icon"><i class="fas fa-database"></i></span><span>Load its 30 rows from Hugging Face</span>
+        </button>
+        <div class="is-size-7" id="sim-hf-status" style="margin-top:0.6rem;"></div>
+      </div>
+    </div>
+
+    <h3 class="title is-5" style="margin-top:2rem;">Lifetime damage along the tower</h3>
+    <p class="is-size-6 has-text-grey">Sum of damage × <code>damage_weight</code> over the 6,468 simulations of each tower: the 25-year fatigue damage per section. <em>D</em> = 1 is the admissible limit.</p>
+    <div id="plot-lifetime" class="plot"></div>
+  </div>
+</section>
+
+<!-- ============ LIVE ROWS ============ -->
+<section class="section has-background-light" id="hf">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Live Rows from Hugging Face</h2>
+    <p class="subtitle is-6">Read directly from <a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench">DeCoDELab/FLOATBench</a> through the Hugging Face dataset viewer API. Every row is one tower section of one simulation.</p>
+
+    <div class="box">
+      <div class="columns is-multiline is-vcentered">
+        <div class="column is-2">
+          <label class="label is-small" for="hf-config">Tower</label>
+          <div class="select is-fullwidth is-small">
+            <select id="hf-config"><option value="ref">ref</option><option value="opt1">opt1</option><option value="opt2">opt2</option></select>
+          </div>
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="hf-split">Split</label>
+          <div class="select is-fullwidth is-small">
+            <select id="hf-split"><option value="test">test</option><option value="train">train</option></select>
+          </div>
+        </div>
+        <div class="column is-4">
+          <label class="label is-small" for="hf-filter">Filter</label>
+          <div class="select is-fullwidth is-small">
+            <select id="hf-filter">
+              <option value="">No filter</option>
+              <option value="&quot;wind_group&quot;='Extrapolate' AND &quot;wave_group&quot;='Extrapolate'">EX_EX (deepest extrapolation)</option>
+              <option value="&quot;section_id&quot;=30">Tower top (section 30)</option>
+              <option value="&quot;section_id&quot;=1">Tower base (section 1)</option>
+              <option value="&quot;wind_speed&quot;=10.5">Near rated wind (10.5 m/s)</option>
+            </select>
+          </div>
+        </div>
+        <div class="column is-4 has-text-right">
+          <button class="button is-small is-rounded" id="hf-prev" type="button" aria-label="Previous page"><span class="icon"><i class="fas fa-chevron-left"></i></span></button>
+          <span id="hf-page" class="is-size-7" style="margin:0 0.5rem;">rows 1–20</span>
+          <button class="button is-small is-rounded" id="hf-next" type="button" aria-label="Next page"><span class="icon"><i class="fas fa-chevron-right"></i></span></button>
+        </div>
+      </div>
+    </div>
+    <p class="is-size-7 has-text-grey" id="hf-status">Loading rows…</p>
+    <div class="table-container"><table class="table is-narrow is-hoverable is-fullwidth data" id="hf-table"></table></div>
+
+    <div class="columns" style="margin-top:1rem;">
+      <div class="column">
+        <pre><code># load one tower on the fly
+from datasets import load_dataset
+ds = load_dataset("DeCoDELab/FLOATBench", "ref")
+print(ds)  # train: 51,840 rows, test: 142,200 rows</code></pre>
+      </div>
+      <div class="column">
+        <pre><code># or download the CSVs once
+hf download DeCoDELab/FLOATBench \
+    --repo-type=dataset --local-dir=data</code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REGIME SPLIT ============ -->
+<section class="section" id="split">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Regime-Aware Split</h2>
+    <div class="content has-text-justified">
+      <p>Each test simulation is labelled twice: once in the wind plane (mean and standard deviation of wind speed) and once in the wave plane (H<sub>s</sub>, T<sub>p</sub>). A point close to the training data is <span class="tag tag-it">In-train</span>. A point inside the concave training hull (alpha shape, α = 0.1) but farther away is <span class="tag tag-ip">Interpolate</span>. A point outside the hull by more than a tolerance is <span class="tag tag-ex">Extrapolate</span>. Crossing the two labels gives nine regime cells.</p>
+      <p>The training grid holds out the edge wind levels (1, 8, 15, 22 of 22) and the edge and centre sea states (1, 4, 7 of 7 for both H<sub>s</sub> and T<sub>p</sub>), so extrapolation depth is controlled by construction. The grid below counts test simulations per cell (the same for every tower).</p>
+    </div>
+    <div class="columns is-vcentered">
+      <div class="column is-5">
+        <div class="regime-grid" id="regime-grid"></div>
+      </div>
+      <div class="column is-7">
+        <figure class="image">
+          <img src="figures/regime_partition.png" alt="Regime partition in the wind and wave planes">
+        </figure>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ LEADERBOARD ============ -->
+<section class="section has-background-light" id="leaderboard">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Leaderboard</h2>
+    <p class="subtitle is-6">Within-tower benchmark (E2): every surrogate of the AutoGluon <code>best</code> and <code>extreme</code> pools, scored by relative L² error on the damage equivalent load (Rel L² DEL, lower is better). Switch the regime to see how the ranking changes when only extrapolation points count. Click a row to see its error across the nine regime cells.</p>
+
+    <div class="box">
+      <div class="columns is-multiline is-vcentered">
+        <div class="column is-2">
+          <label class="label is-small" for="lb-tower">Tower</label>
+          <div class="select is-fullwidth is-small">
+            <select id="lb-tower"><option value="ref">Reference</option><option value="opt1">Opt1</option><option value="opt2">Opt2</option></select>
+          </div>
+        </div>
+        <div class="column is-4">
+          <label class="label is-small" for="lb-regime">Rank by regime</label>
+          <div class="select is-fullwidth is-small">
+            <select id="lb-regime">
+              <option value="Global">Global (all test points)</option>
+              <optgroup label="Wind × wave cell">
+                <option value="EX_EX" selected>EX_EX: extrapolate wind and wave</option>
+                <option value="EX_IP">EX_IP</option><option value="EX_IT">EX_IT</option>
+                <option value="IP_EX">IP_EX</option><option value="IP_IP">IP_IP</option><option value="IP_IT">IP_IT</option>
+                <option value="IT_EX">IT_EX</option><option value="IT_IP">IT_IP</option><option value="IT_IT">IT_IT</option>
+              </optgroup>
+              <optgroup label="One axis">
+                <option value="wind_EX">Wind extrapolate</option><option value="wind_IP">Wind interpolate</option><option value="wind_IT">Wind in-train</option>
+                <option value="wave_EX">Wave extrapolate</option><option value="wave_IP">Wave interpolate</option><option value="wave_IT">Wave in-train</option>
+              </optgroup>
+            </select>
+          </div>
+        </div>
+        <div class="column is-4">
+          <label class="label is-small" for="lb-search">Search</label>
+          <input class="input is-small" type="search" id="lb-search" placeholder="model name">
+        </div>
+        <div class="column is-2">
+          <label class="label is-small" for="lb-n">Show</label>
+          <div class="select is-fullwidth is-small">
+            <select id="lb-n"><option value="15">Top 15</option><option value="30">Top 30</option><option value="999">All</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="chips" id="lb-families" role="group" aria-label="Filter by model family"></div>
+    </div>
+
+    <div class="columns">
+      <div class="column is-7">
+        <div class="table-container lb-table-wrap"><table class="table is-narrow is-hoverable is-fullwidth data lb" id="lb-table"></table></div>
+      </div>
+      <div class="column is-5">
+        <div id="plot-crossover" class="plot"></div>
+        <div id="plot-heat" class="plot plot-short"></div>
+      </div>
+    </div>
+    <p class="is-size-7 has-text-grey">Point estimates on the full test set. Condition-level bootstrap intervals are produced by <code>scripts/leaderboard/</code>. Rank changes are relative to the Global ranking of the same pool.</p>
+  </div>
+</section>
+
+<!-- ============ FINDINGS ============ -->
+<section class="section" id="findings">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Results</h2>
+    <div class="columns">
+      <div class="column is-half">
+        <div class="box">
+          <p class="title is-5">Within tower (E2): the global winner loses in wind-and-wave extrapolation</p>
+          <p>The global rank-1 <code>WeightedEnsemble_L2</code> drops to EX_EX ranks 23 / 11 / 11 (Reference / Opt1 / Opt2). The EX_EX rank-1 <code>NeuralNetFastAI_r102_BAG_L1</code> sits at global ranks 79 / 73 / 69. The crossover holds under every partition setting that keeps an extrapolation region, after retraining on two alternative grids and against standalone baselines. Validation-based model selection does not recover it.</p>
+          <div id="plot-findings-e2" class="plot plot-short"></div>
+        </div>
+      </div>
+      <div class="column is-half">
+        <div class="box">
+          <p class="title is-5">Cross tower (E3): transfer collapses on geometries far from training</p>
+          <p>Training on a set that includes the reference tower generalizes to the redesigned towers: rank-1 Rel L² DEL is 0.067 (Ref+Opt1 → Opt2) and 0.098 (Ref+Opt2 → Opt1). Training without it (Opt1+Opt2 → Ref) reaches 0.423, a 4 to 6× increase.</p>
+          <div id="plot-findings-e3" class="plot plot-short"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ RESOURCES ============ -->
+<section class="section has-background-light">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Resources</h2>
+    <div class="columns is-multiline">
+      <div class="column is-half">
+        <div class="box">
+          <p class="title is-5"><i class="fab fa-github"></i> &nbsp;<a href="https://github.com/Joao97ribeiro/FLOATBench">FLOATBench (code)</a></p>
+          <p>Evaluation harness, regime-aware splitter, bootstrap leaderboards and every paper analysis, all driven by <code>--flagfile</code> configs. Smoke test in ~10 min, full reproduction of E2 + E3 in ~48 GPU-hours.</p>
+        </div>
+      </div>
+      <div class="column is-half">
+        <div class="box">
+          <p class="title is-5"><i class="fas fa-database"></i> &nbsp;<a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench">DeCoDELab/FLOATBench (dataset)</a></p>
+          <p>Train and test CSVs for the three towers with the regime labels, lifetime weights and section geometry. Released under CC-BY-4.0.</p>
+        </div>
+      </div>
+      <div class="column is-half">
+        <div class="box">
+          <p class="title is-5"><i class="fas fa-file-pdf"></i> &nbsp;<a href="https://arxiv.org/abs/2605.25717">Paper (arXiv 2605.25717)</a></p>
+          <p>Dataset construction, the regime-aware partition, the three protocol levels and the full benchmark results.</p>
+        </div>
+      </div>
+      <div class="column is-half">
+        <div class="box">
+          <p class="title is-5"><i class="fas fa-water"></i> &nbsp;<a href="https://joao97ribeiro.github.io/FLOAT/">FLOAT (design framework)</a></p>
+          <p>The fatigue-aware tower design framework that produced the Opt1 and Opt2 geometries of FLOATBench.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CITATION ============ -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <div class="level is-mobile" style="margin-bottom:1rem;">
+      <div class="level-left">
+        <h2 class="title is-3" style="margin-bottom:0;">Citation</h2>
+      </div>
+      <div class="level-right">
+        <button id="copy-bibtex" class="button is-rounded is-dark" title="Copy BibTeX to clipboard">
+          <span class="icon"><i class="fas fa-copy"></i></span><span>Copy BibTeX</span>
+        </button>
+      </div>
+    </div>
+    <div class="bibtex-block">
+      <pre style="white-space:pre-wrap;"><code id="bibtex">@misc{ribeiro2026floatbenchdatasetbenchmarkfloating,
+      title={FLOATBench: A Dataset and Benchmark for Floating Offshore Wind Turbine Tower Fatigue},
+      author={João Alves Ribeiro and Bruno Alves Ribeiro and Francisco Pimenta and Sérgio M. O. Tavares and Faez Ahmed},
+      year={2026},
+      eprint={2605.25717},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI},
+      url={https://arxiv.org/abs/2605.25717},
+}</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ACKNOWLEDGEMENTS ============ -->
+<section class="section has-background-light">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Acknowledgements</h2>
+    <div class="content has-text-justified">
+      <p>The high-fidelity simulations underlying FLOATBench were produced with <a href="https://github.com/OpenFAST/openfast">OpenFAST</a> on the <a href="https://github.com/IEAWindSystems/IEA-22-280-RWT">IEA-22-280-RWT</a> reference floating wind turbine. The tabular surrogate pipeline relies on <a href="https://auto.gluon.ai">AutoGluon</a>. We thank these communities for keeping the underlying tools open.</p>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="content has-text-centered">
+    <p>Page template adapted from the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template">Academic Project Page Template</a>. Source on <a href="https://github.com/Joao97ribeiro/FLOATBench/tree/main/docs">GitHub</a>.</p>
+  </div>
+</footer>
+
+</body>
+</html>

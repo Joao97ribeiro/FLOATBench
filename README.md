@@ -96,10 +96,10 @@ adjudicating competing tabular surrogates on this domain.
 ## What's in this repo
 
 ```
-floatbench/        Python package (training, evaluation, plots, splitter)
+floatbench/        Python package (training, evaluation, plots, splitter, analysis helpers)
 scripts/           Pipeline entry points — see "Scripts" below
-analyses/          Paper analyses (bootstrap, robustness, baselines, audit)
-figures/           Scripts that draw the paper figures (shared house style)
+scripts/analyses/  Paper analyses (bootstrap, robustness, baselines, audit)
+scripts/figures/   Scripts that draw the paper figures (shared house style)
 docs/              Figures and assets used in this README
 environment.yml    Conda environment (Python 3.12 + GPU PyTorch)
 requirements.txt   Pinned runtime dependencies
@@ -420,26 +420,35 @@ re-simulating any OpenFAST cases.
 
 ## Reproducing the paper analyses
 
-The analyses in [`analyses/`](./analyses) and the figures in
-[`figures/`](./figures) run from the repository root with
-`python -m <module>`. Every script takes its paths from command-line
-arguments whose defaults are relative to the repository root:
-`--data_dir data/` (released dataset), `--pred_dir
-outputs/analyses/predictions/` (stored predictions, see step 0) and
-`--out_dir outputs/analyses/` (results); `--help` lists all options.
-Apart from the steps marked **trains**, everything is inference or
-post-processing and runs on CPU in seconds to minutes.
+Every analysis and figure has its own folder under
+[`scripts/analyses/`](./scripts/analyses) or
+[`scripts/figures/`](./scripts/figures) with a `run.py` and a
+`--flagfile` `config.cfg`, like the pipeline stages above. Run them from
+the repository root; the configs hold the benchmark settings and paths
+relative to the root: `data/` (released dataset),
+`outputs/analyses/predictions/` (stored predictions, see step 0),
+`outputs/within/` and `outputs/cross/` (benchmark outputs of
+`scripts/run_benchmark.py`), and `outputs/analyses/<name>/` or
+`outputs/figures/` (results). Override any path on the command line
+after the flagfile. Shared helpers live in
+[`floatbench/analysis/`](./floatbench/analysis) (pool predictions,
+partition variants, alternative splits) and the figure style in
+`floatbench/plots/paper_style.py`. Apart from the steps marked
+**trains**, everything is inference or post-processing and runs on CPU
+in seconds to minutes.
 
 **Step 0: per-row predictions of the trained pools.** The analyses
 re-score stored test predictions instead of re-running models. After
-the benchmark (`scripts/run_benchmark.py`), write one parquet per pool
-(inference only, `CUDA_VISIBLE_DEVICES=` keeps it on CPU):
+the benchmark, write one parquet per pool (inference only,
+`CUDA_VISIBLE_DEVICES=` keeps it on CPU):
 
 ```bash
 for t in ref opt1 opt2; do for p in best extreme; do
-  python -m analyses.predict_pool --model_dir outputs/within/$t/$p/model \
-      --test_csv data/$t/test_damage.csv \
-      --out outputs/analyses/predictions/e2/${t}_$p.parquet
+  python scripts/analyses/predict_pool/run.py \
+      --flagfile=scripts/analyses/predict_pool/config.cfg \
+      --model_dir=outputs/within/$t/$p/model \
+      --test_csv=data/$t/test_damage.csv \
+      --output_path=outputs/analyses/predictions/e2/${t}_$p.parquet
 done; done
 ```
 
@@ -450,47 +459,52 @@ The same command with the E1 and E3 models and test sets fills
 `predictions/grid_{A,B}/ref_<preset>.parquet` and
 `predictions/grouped_r{1,2,3}/ref_<preset>.parquet`.
 
-| Analysis (paper) | Command | Main outputs and expected values |
-| --- | --- | --- |
-| Condition-level bootstrap, top-10 CIs and paired rank-1 vs rank-2 (App. F.7, G) | `python -m analyses.cluster_bootstrap --also_row` | `cluster_bootstrap/cluster_top10.csv`, `paired_top2.csv`. Paired interval above zero on 6 of 9 groups; tied on E2 REF $[-0.0008, 0.0010]$, E1 OPT1, E3 REF+OPT2→OPT1. Row-level std smaller by a median 4.8× / 8.3× / 4.2× (E1 / E2 / E3). |
-| Partition label stability (App. H.1) | `python -m analyses.split_sensitivity` | `split_sensitivity/sensitivity_results.csv`: 100% reproduction of the released labels, $\varepsilon$ = 0.049 (wind) / 0.021 (wave); agreement ≥ 97.9% and EX_EX Jaccard ≥ 0.90 for $\alpha \in [0.05, 0.3]$; tolerance removed: 254 → 361 EX_EX simulations. |
-| Crossover over the 15 partition variants (App. H.2, Sec. 5.2) | `python -m analyses.ranking_stability` | `ranking_stability/summary.csv`: crossover 15/15 on every tower and metric; ensemble EX_EX rank 23 / 11 / 11 (Rel L² DEL); EX_EX rank-1 `NeuralNetFastAI_r102_BAG_L1` at global ranks 79 / 73 / 69; min Kendall τ 0.89 / 0.90 / 0.92. |
-| Alternative held-out grids (App. H.3) | `python -m analyses.grid_variants.build_splits`, then **trains** (below), then `python -m analyses.grid_variants.analyze --variant A` (and `B`) | `grid_variants/summary_{A,B}.csv`: grid A EX_EX rank 20 / 37 of the global rank-1; grid B deep corner ensemble rank 7 / 9, rank-1 `NeuralNetFastAI_r191_BAG_L1` (0.0744 / 0.932). |
-| Condition-grouped random split (App. H.4, Sec. 5.1) | `python -m analyses.grouped_random.build_splits`, then **trains** (below), then `python -m analyses.grouped_random.analyze` | 78.6% seed sharing in E1; `grouped_random/summary.csv`: ensemble Rel L² DEL 0.0191 (E1) vs 0.0198 (grouped, 0.0198 to 0.0201 over three draws). |
-| Selection regret (App. J.1) | `python -m analyses.selection_analysis` | `selection/selection_analysis.csv`: validation pick leaves 0.033 / 0.015 / 0.027 of EX_EX damage R²; 1.87× / 1.53× / 1.60× the best EX_EX Rel L² DEL. |
-| Mechanism (App. J.2) | `python -m analyses.mechanism_analysis` | `mechanism/*.csv`: ensemble weight on trees 87.5% / 87.5% / 85.7% (needs the trained `best` predictors, loaded on CPU); median EX_EX bias trees −0.061 / −0.164 / −0.202; 8 / 6 / 8 networks in the EX_EX top-10. |
-| Classical and standalone baselines (App. I, Table 2) | **trains**: `python -m analyses.baselines.fit_classical` (CPU) and `python -m analyses.baselines.fit_stronger --device cuda`; then `python -m analyses.baselines.evaluate` | `baselines/baselines_global_exex.csv`, `baselines_per_regime.csv`, `tabpfn_in_pool.csv`: e.g. GP EX_EX Rel L² DEL 0.307 / 0.340 / 0.335; TabPFN damage-R² ranks 77 / 10 / 5 (global), 79 / 10 / 7 (EX_EX). |
-| Raw time-series label audit (App. M) | `python -m analyses.audit.run_audit --package_dir <audit_package>` | 4,410 labels of 147 simulations reproduced; maximum relative deviation 4.6e-16 (criterion ≤ 1e-6). See [`analyses/audit/README.md`](./analyses/audit/README.md). |
+In the table, `<name>` stands for
+`python scripts/analyses/<name>/run.py --flagfile=scripts/analyses/<name>/config.cfg`:
 
-Training commands for the retraining analyses (paper settings, 4 h per
-preset on one GPU):
+| Analysis | Command | Main outputs and expected values |
+| --- | --- | --- |
+| Condition-level bootstrap: top-10 CIs and paired rank-1 vs rank-2 | `cluster_bootstrap` | `cluster_top10.csv`, `paired_top2.csv`. Paired interval above zero on 6 of 9 groups; tied on E2 REF $[-0.0008, 0.0010]$, E1 OPT1, E3 REF+OPT2→OPT1. Row-level std smaller by a median 4.8× / 8.3× / 4.2× (E1 / E2 / E3). |
+| Partition label stability | `split_sensitivity` | `sensitivity_results.csv`: 100% reproduction of the released labels, $\varepsilon$ = 0.049 (wind) / 0.021 (wave); agreement ≥ 97.9% and EX_EX Jaccard ≥ 0.90 for $\alpha \in [0.05, 0.3]$; tolerance removed: 254 → 361 EX_EX simulations. |
+| Crossover over the 15 partition variants | `ranking_stability` | `summary.csv`: crossover 15/15 on every tower and metric; ensemble EX_EX rank 23 / 11 / 11 (Rel L² DEL); EX_EX rank-1 `NeuralNetFastAI_r102_BAG_L1` at global ranks 79 / 73 / 69; min Kendall τ 0.89 / 0.90 / 0.92. |
+| Alternative held-out grids | `grid_variants_split`, then **trains** (below), then `grid_variants` with `--variant=A` and `--variant=B` | `summary_{A,B}.csv`: grid A EX_EX rank 20 / 37 of the global rank-1; grid B deep corner ensemble rank 7 / 9, rank-1 `NeuralNetFastAI_r191_BAG_L1` (0.0744 / 0.932). |
+| Condition-grouped random split | `grouped_random_split`, then **trains** (below), then `grouped_random` | 78.6% seed sharing in E1; `summary.csv`: ensemble Rel L² DEL 0.0191 (E1) vs 0.0198 (grouped, 0.0198 to 0.0201 over three draws). |
+| Selection regret | `selection` | `selection_analysis.csv`: validation pick leaves 0.033 / 0.015 / 0.027 of EX_EX damage R²; 1.87× / 1.53× / 1.60× the best EX_EX Rel L² DEL. |
+| Mechanism | `mechanism` | `mechanism_*.csv`: ensemble weight on trees 87.5% / 87.5% / 85.7% (needs the trained `best` predictors, loaded on CPU); median EX_EX bias trees −0.061 / −0.164 / −0.202; 8 / 6 / 8 networks in the EX_EX top-10. |
+| Classical and standalone baselines | **trains**: `baselines_classical` (CPU) and `baselines_modern` (GPU); then `baselines` | `baselines_global_exex.csv`, `baselines_per_regime.csv`, `tabpfn_in_pool.csv`: e.g. GP EX_EX Rel L² DEL 0.307 / 0.340 / 0.335; TabPFN damage-R² ranks 77 / 10 / 5 (global), 79 / 10 / 7 (EX_EX). |
+| Raw time-series label audit | `audit` with `--package_dir=<audit_package>` | 4,410 labels of 147 simulations reproduced; maximum relative deviation 4.6e-16 (criterion ≤ 1e-6). See [`scripts/analyses/audit/README.md`](./scripts/analyses/audit/README.md). |
+
+Training commands for the retraining analyses (benchmark settings, 4 h
+per preset on one GPU):
 
 ```bash
 # Alternative grids A and B (ref), best + extreme presets
 for v in A B; do for p in best extreme; do
   python scripts/train/run.py \
-      --flagfile=analyses/grid_variants/configs/train_ref_${v}_${p}.cfg
+      --flagfile=scripts/analyses/grid_variants/train_ref_${v}_${p}.cfg
 done; done
 # Condition-grouped random splits (r1 best + extreme, r2 and r3 best)
 for r in r1_best r1_extreme r2_best r3_best; do
   python scripts/train/run.py \
-      --flagfile=analyses/grouped_random/configs/train_${r}.cfg
+      --flagfile=scripts/analyses/grouped_random/train_${r}.cfg
 done
 ```
 
-**Figures.** Each script in [`figures/`](./figures) draws one paper
-figure with the shared style of `figures/paper_style.py` and writes to
-`outputs/figures/`:
+**Figures.** Each folder in [`scripts/figures/`](./scripts/figures)
+draws one or more figures in the shared style of
+`floatbench/plots/paper_style.py` and writes to `outputs/figures/`.
+`<name>` stands for
+`python scripts/figures/<name>/run.py --flagfile=scripts/figures/<name>/config.cfg`:
 
 | Figure | Command | Input |
 | --- | --- | --- |
-| Crossover (E2) | `python -m figures.plot_crossover` | merged E2 benchmark, `outputs/within/{tower}/benchmark` |
-| Cross-tower bars (E3) | `python -m figures.plot_cross_tower_bars` | merged E3 benchmark, `outputs/cross/{held_out}/benchmark` |
-| Regime heatmap, family bars | `python -m figures.plot_heatmap_bars` | merged E2 benchmark |
-| Global vs EX_EX scatter | `python -m figures.plot_scatter_global_exex` | merged E2 benchmark |
-| E3 predicted vs true | `python -m figures.plot_scatter_e3` | E3 per-model `predictions.csv` |
-| Partition planes, spacing histograms, lifetime damage, split sensitivity | `python -m figures.plot_dataset_figures` | released dataset + `split_sensitivity` output |
-| Simulation outputs | `python -m figures.plot_simulation_outputs --openfast_out <.out> --render <png>` | one raw OpenFAST output (not in the tabular release) |
+| Crossover (E2) | `crossover` | merged E2 benchmark, `outputs/within/{tower}/benchmark` |
+| Cross-tower bars (E3) | `cross_tower_bars` | merged E3 benchmark, `outputs/cross/{held_out}/benchmark` |
+| Regime heatmap, family bars | `heatmap_bars` | merged E2 benchmark |
+| Global vs EX_EX scatter | `scatter_global_exex` | merged E2 benchmark |
+| E3 predicted vs true | `scatter_cross_tower` | E3 per-model `predictions.csv` |
+| Partition planes, spacing histograms, lifetime damage, split sensitivity | `dataset` | released dataset + `split_sensitivity` output |
+| Simulation outputs | `simulation_outputs` with `--openfast_out=<.out> --render=<png>` | one raw OpenFAST output (not in the tabular release) |
 
 ## Headline findings
 

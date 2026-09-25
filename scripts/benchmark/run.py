@@ -274,8 +274,8 @@ def _build_model_pool_table(dirs, output_dir):
 
     Reads ``leaderboard.csv`` from each discovered directory,
     classifies every fitted model by family, and writes a wide
-    pivot table to ``<output_dir>/model_pool.csv`` matching the
-    layout of Table~\\ref{tab:model_pool} in the paper.
+    pivot table to ``<output_dir>/model_pool.csv`` (rows = preset,
+    columns = family).
 
     Args:
         dirs: List of (model_dir, preset_label) tuples.

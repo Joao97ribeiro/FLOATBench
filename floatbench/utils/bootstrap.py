@@ -27,8 +27,8 @@ Why whole conditions. The 30 tower sections and 6 turbulence seeds of
 one wind/wave operating condition share its met-ocean state, so the
 test rows are not independent. Row-level resampling ignores this
 dependence and underestimates the standard deviation of Rel L2 DEL by
-a median 4.8x (E1), 8.3x (E2) and 4.2x (E3). The paper therefore
-resamples whole conditions (paper Appendix F.7, Algorithm 1).
+a median 4.8x (E1), 8.3x (E2) and 4.2x (E3). The benchmark therefore
+resamples whole conditions.
 
 Given N test pairs {(y_i, y_pred_i)} with condition labels k_i in
 {1, ..., K} and a set of metrics {f_m}, the algorithm is:
@@ -319,8 +319,7 @@ def paired_bootstrap_difference(
     the difference is much tighter than the overlap of the two marginal
     intervals. With ``a`` = rank 1 and ``b`` = rank 2 of an error
     metric (lower is better, e.g. Rel L2 DEL), an interval entirely
-    above zero means rank 1 is significantly better (paper Table
-    ``tab:app_paired_top12``).
+    above zero means rank 1 is significantly better.
 
     Args:
         y_true: Ground truth, shape (N,).

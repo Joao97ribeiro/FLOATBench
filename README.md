@@ -52,8 +52,8 @@ scripts to reproduce the paper results.
 **FLOATBench** is presented in the following paper, which fully
 describes the dataset, the regime-aware partition, and the
 evaluation protocol: *FLOATBench: A Dataset and Benchmark for
-Floating Offshore Wind Turbine Tower Fatigue* (under review at the
-NeurIPS 2026 Datasets and Benchmarks Track).
+Floating Offshore Wind Turbine Tower Fatigue*
+([arXiv:2605.25717](https://arxiv.org/abs/2605.25717)).
 
 Across up to 96 tabular surrogates per tower (E1/E2) and up to 63
 per fold (E3) — **735 trained surrogates** in total — the
@@ -81,8 +81,13 @@ adjudicating competing tabular surrogates on this domain.
   transfer (E3).
 - **Reproducible harness.** End-to-end CLI scripts for training
   (AutoGluon), evaluation (per-section / per-regime metrics),
-  bootstrap leaderboards, cross-preset benchmark plots, and the
-  alpha-shape splitter — all driven by `--flagfile` configs.
+  bootstrap leaderboards with condition-level confidence intervals,
+  cross-preset benchmark plots, and the alpha-shape splitter, all
+  driven by `--flagfile` configs.
+- **Paper analyses.** Scripts for every robustness, selection,
+  mechanism and baseline analysis of the paper, the raw time-series
+  label audit, and the paper figures (see
+  [Reproducing the paper analyses](#reproducing-the-paper-analyses)).
 
 > **Metrics.** Throughout, **DEL** is the Damage Equivalent Load and
 > **Rel L²** the relative L² error. The headline metric is Rel L² on DEL,
@@ -93,9 +98,12 @@ adjudicating competing tabular surrogates on this domain.
 ```
 floatbench/        Python package (training, evaluation, plots, splitter)
 scripts/           Pipeline entry points — see "Scripts" below
+analyses/          Paper analyses (bootstrap, robustness, baselines, audit)
+figures/           Scripts that draw the paper figures (shared house style)
 docs/              Figures and assets used in this README
 environment.yml    Conda environment (Python 3.12 + GPU PyTorch)
 requirements.txt   Pinned runtime dependencies
+requirements-analyses.txt  Extra pins for TabPFN and the label audit
 ```
 
 ## Scripts
@@ -115,7 +123,9 @@ the cross-preset benchmark figures:
   it with per-section and per-regime (In-train / Interpolate /
   Extrapolate) metrics.
 - [`scripts/leaderboard/`](./scripts/leaderboard) — build the bootstrap
-  CI leaderboard tables over DEL (paper Table 2).
+  CI leaderboard tables over DEL. Confidence intervals resample whole
+  operating conditions (see [Bootstrap confidence
+  intervals](#bootstrap-confidence-intervals)).
 - [`scripts/benchmark/`](./scripts/benchmark) — merge presets into the
   cross-preset benchmark outputs (regime heatmaps, bump chart, family
   bars, `model_pool` table).
@@ -182,6 +192,17 @@ test_damage.csv, data.csv, metadata.json}`. See the
 [dataset README](https://huggingface.co/datasets/DeCoDELab/FLOATBench)
 for the full schema and the regime-aware split definition.
 
+**Lifetime weights.** `damage_weight` is not a probability: it is the
+expected number of 600 s simulation windows a simulation represents
+over the 25-year service life, i.e. occurrence probability $\times$
+1,314,000 lifetime windows. A simulation at wind level $v$ has weight
+$1{,}314{,}000 \cdot P(v) / 294$ (49 equiprobable wave states $\times$
+6 seeds per wind level), so the weights of the 6,468 simulations of a
+tower sum to 1,314,000. Lifetime damage per section is
+$\sum_i$ `damage_i * damage_weight_i` (one weight per simulation,
+repeated over its 30 sections). The benchmark metrics use the
+unweighted per-section rows.
+
 ## Quickstart
 
 ```bash
@@ -236,7 +257,7 @@ outputs/within/ref/
 │   │   ├── leaderboard_test_metrics.csv      r2 / Rel L² damage + DEL
 │   │   ├── leaderboard_test_groups.csv       per-regime metrics (IT/IP/EX × wind/wave)
 │   │   ├── leaderboard_test_sections.csv     per-section metrics (1 row per model × section)
-│   │   └── del/                              bootstrap CI95 over DEL (paper Table 2)
+│   │   └── del/                              condition-level bootstrap CI95 over DEL
 │   │       ├── leaderboard_test_summary.csv          point estimates
 │   │       ├── leaderboard_test_summary_ci95.csv     95% bootstrap CIs
 │   │       ├── leaderboard_test_percentiles.csv      bootstrap percentiles
@@ -245,15 +266,15 @@ outputs/within/ref/
 │   └── models/<MODEL_NAME>/test/predictions.csv      per-model raw predictions
 ├── extreme/model/                 (same layout, extreme preset)
 └── benchmark/                     cross-preset merge (the headline outputs)
-    ├── model_pool.csv             paper Table 9 (rows = preset, cols = family)
+    ├── model_pool.csv             model-pool table (rows = preset, cols = family)
     ├── leaderboard/
     │   ├── ranking/
-    │   │   ├── bump_chart.png                  paper Fig. 6 (rank movement)
+    │   │   ├── bump_chart.png                  rank movement across regimes
     │   │   ├── scatter_global_vs_ex_ex_*.png   global vs EX_EX cross-over
     │   │   ├── scatter_sections_top_models_*.png  per-section scatter (sec1 / sec30 / EX_EX)
     │   │   └── predictions_report.log          which models had predictions, which were auto-generated
     │   ├── regimes/
-    │   │   ├── heatmap_groups_mre_del.png       3×3 regime heatmap (paper Fig. 5)
+    │   │   ├── heatmap_groups_mre_del.png       3×3 regime heatmap
     │   │   └── heatmap_9groups_mre_del.png      9-cell expanded heatmap
     │   ├── extrapolation/
     │   │   ├── bar_family_regime_mre_del.png   per-family Rel L² across regimes
@@ -281,16 +302,48 @@ python scripts/train/run.py --flagfile=scripts/train/config.cfg \
 # Evaluate
 python scripts/test/run.py --flagfile=scripts/test/config.cfg
 
-# Bootstrap leaderboard (DEL only)
+# Bootstrap leaderboard (DEL only; condition-level CIs, B = 2000)
 python scripts/leaderboard/run.py --flagfile=scripts/leaderboard/config.cfg
 
 # Cross-preset benchmark (heatmaps, bump charts, model_pool table)
 python scripts/benchmark/run.py --flagfile=scripts/benchmark/config.cfg
 ```
 
+### Bootstrap confidence intervals
+
+The leaderboard CIs are percentile-bootstrap intervals ($B = 2000$,
+95%, seed 42) whose resampling unit is the **operating condition**
+(wind level, $H_s$, $T_p$): each replicate draws the 790 (E2) or 1,078
+(E1, E3) test conditions with replacement and keeps all rows of each
+drawn condition (all its test seeds and 30 sections). The rows of
+one condition share its met-ocean state, so row-level resampling
+underestimates the spread (median $4.8\times$ / $8.3\times$ /
+$4.2\times$ smaller standard deviation of Rel L² DEL on E1 / E2 / E3).
+The condition of a row follows from its `sim_id`:
+`(sim_id - 1) // 294 * 49 + (sim_id - 1) % 49`
+(`floatbench.utils.condition_id`).
+
+```python
+from floatbench.utils import (bootstrap_regression_metrics, condition_id,
+                              paired_bootstrap_difference)
+
+groups = condition_id(df_test["sim_id"])
+ci = bootstrap_regression_metrics(y_del, p_del, groups=groups)  # paper CIs
+ci_rows = bootstrap_regression_metrics(y_del, p_del, cluster="row")  # old
+# Paired rank-1 vs rank-2 test on shared resamples: an interval of
+# rel_l2(rank 2) - rel_l2(rank 1) above zero means rank 1 is better.
+diff = paired_bootstrap_difference(y_del, p_rank1, p_rank2, groups=groups)
+```
+
+`cluster="condition"` is the default of the harness
+(`--bootstrap_cluster=condition` in `scripts/leaderboard/config.cfg`);
+`--bootstrap_cluster=row` reproduces the original row-level i.i.d.
+bootstrap. Called without `groups`, `bootstrap_regression_metrics`
+keeps its old row-level behaviour and logs a warning.
+
 ## Custom splits (alternative training envelopes)
 
-The release ships pre-split CSVs that match the paper Table F.1
+The release ships pre-split CSVs that match the paper training grid
 training set. The same splitter, however, lets you build **alternative
 training envelopes** for ablations: change which wind setpoints, wave
 pairs or seeds are used for training by picking different grid IDs
@@ -335,24 +388,120 @@ the train + test diagnostic plots, and a top-level
 `split_metadata.json` with the grid summary and train-spacing
 statistics.
 
-### Tuning the alpha-shape threshold
+### Tuning the partition parameters
 
-The boundary between `Interpolate` and `Extrapolate` is fixed in the
-released splitter (alpha-shape on the train hull plus a normalized
-distance threshold of `0.5`). To explore a different threshold,
-instantiate `floatbench.split.domain_groups.WindWaveDomainGrouper`
-directly with custom `interp_edges` / `extrap_edges`.
+The released partition labels each test simulation separately in the
+wind plane (`mean_wind_speed`, `std_wind_speed`) and the wave plane
+(`wave_hs`, `wave_tp`), with four parameters:
+
+- **Alpha-shape parameter** `boundary_alpha = 0.1`: the concave
+  training hull, fitted in original (unstandardized) units.
+- **In-train threshold** $\tau$ = `interp_edges=[0.5]`: a test point
+  whose nearest-training distance in standardized units, divided by
+  the mean train-to-train spacing $s$, is at most $\tau$ is
+  `In-train`, otherwise provisionally `Interpolate`.
+- **Boundary tolerance** $\varepsilon = \tau s$: a point is relabelled
+  `Extrapolate` only if it lies outside the alpha shape **and** at least
+  $\varepsilon$ from its boundary. $s$ is the standardized spacing
+  scale, while the distance to the boundary is measured in the original
+  feature units ($\varepsilon = 0.049$ in the wind plane and $0.021$ in
+  the wave plane for the released split). Points just outside the hull
+  but within the tolerance stay `Interpolate`. `boundary_offset_mult`
+  (default 1.0) scales $\varepsilon$.
+- **Spacing statistic** `scale_stat="mean"`.
+
+To explore a different partition, instantiate
+`floatbench.split.domain_groups.WindWaveDomainGrouper` directly with
+custom `boundary_alpha`, `interp_edges`, `boundary_offset_mult` or
+`scale_stat`; `python -m analyses.split_sensitivity` sweeps all four.
 
 This lets you construct your own train/test splits without
 re-simulating any OpenFAST cases.
+
+## Reproducing the paper analyses
+
+The analyses in [`analyses/`](./analyses) and the figures in
+[`figures/`](./figures) run from the repository root with
+`python -m <module>`. Every script takes its paths from command-line
+arguments whose defaults are relative to the repository root:
+`--data_dir data/` (released dataset), `--pred_dir
+outputs/analyses/predictions/` (stored predictions, see step 0) and
+`--out_dir outputs/analyses/` (results); `--help` lists all options.
+Apart from the steps marked **trains**, everything is inference or
+post-processing and runs on CPU in seconds to minutes.
+
+**Step 0: per-row predictions of the trained pools.** The analyses
+re-score stored test predictions instead of re-running models. After
+the benchmark (`scripts/run_benchmark.py`), write one parquet per pool
+(inference only, `CUDA_VISIBLE_DEVICES=` keeps it on CPU):
+
+```bash
+for t in ref opt1 opt2; do for p in best extreme; do
+  python -m analyses.predict_pool --model_dir outputs/within/$t/$p/model \
+      --test_csv data/$t/test_damage.csv \
+      --out outputs/analyses/predictions/e2/${t}_$p.parquet
+done; done
+```
+
+The same command with the E1 and E3 models and test sets fills
+`predictions/e1/<tower>_<preset>.parquet` and
+`predictions/e3/<fold>_<preset>.parquet` (folds `ref_opt1`, `ref_opt2`,
+`op1_opt2`), and with the retrained grid and grouped-split models fills
+`predictions/grid_{A,B}/ref_<preset>.parquet` and
+`predictions/grouped_r{1,2,3}/ref_<preset>.parquet`.
+
+| Analysis (paper) | Command | Main outputs and expected values |
+| --- | --- | --- |
+| Condition-level bootstrap, top-10 CIs and paired rank-1 vs rank-2 (App. F.7, G) | `python -m analyses.cluster_bootstrap --also_row` | `cluster_bootstrap/cluster_top10.csv`, `paired_top2.csv`. Paired interval above zero on 6 of 9 groups; tied on E2 REF $[-0.0008, 0.0010]$, E1 OPT1, E3 REF+OPT2→OPT1. Row-level std smaller by a median 4.8× / 8.3× / 4.2× (E1 / E2 / E3). |
+| Partition label stability (App. H.1) | `python -m analyses.split_sensitivity` | `split_sensitivity/sensitivity_results.csv`: 100% reproduction of the released labels, $\varepsilon$ = 0.049 (wind) / 0.021 (wave); agreement ≥ 97.9% and EX_EX Jaccard ≥ 0.90 for $\alpha \in [0.05, 0.3]$; tolerance removed: 254 → 361 EX_EX simulations. |
+| Crossover over the 15 partition variants (App. H.2, Sec. 5.2) | `python -m analyses.ranking_stability` | `ranking_stability/summary.csv`: crossover 15/15 on every tower and metric; ensemble EX_EX rank 23 / 11 / 11 (Rel L² DEL); EX_EX rank-1 `NeuralNetFastAI_r102_BAG_L1` at global ranks 79 / 73 / 69; min Kendall τ 0.89 / 0.90 / 0.92. |
+| Alternative held-out grids (App. H.3) | `python -m analyses.grid_variants.build_splits`, then **trains** (below), then `python -m analyses.grid_variants.analyze --variant A` (and `B`) | `grid_variants/summary_{A,B}.csv`: grid A EX_EX rank 20 / 37 of the global rank-1; grid B deep corner ensemble rank 7 / 9, rank-1 `NeuralNetFastAI_r191_BAG_L1` (0.0744 / 0.932). |
+| Condition-grouped random split (App. H.4, Sec. 5.1) | `python -m analyses.grouped_random.build_splits`, then **trains** (below), then `python -m analyses.grouped_random.analyze` | 78.6% seed sharing in E1; `grouped_random/summary.csv`: ensemble Rel L² DEL 0.0191 (E1) vs 0.0198 (grouped, 0.0198 to 0.0201 over three draws). |
+| Selection regret (App. J.1) | `python -m analyses.selection_analysis` | `selection/selection_analysis.csv`: validation pick leaves 0.033 / 0.015 / 0.027 of EX_EX damage R²; 1.87× / 1.53× / 1.60× the best EX_EX Rel L² DEL. |
+| Mechanism (App. J.2) | `python -m analyses.mechanism_analysis` | `mechanism/*.csv`: ensemble weight on trees 87.5% / 87.5% / 85.7% (needs the trained `best` predictors, loaded on CPU); median EX_EX bias trees −0.061 / −0.164 / −0.202; 8 / 6 / 8 networks in the EX_EX top-10. |
+| Classical and standalone baselines (App. I, Table 2) | **trains**: `python -m analyses.baselines.fit_classical` (CPU) and `python -m analyses.baselines.fit_stronger --device cuda`; then `python -m analyses.baselines.evaluate` | `baselines/baselines_global_exex.csv`, `baselines_per_regime.csv`, `tabpfn_in_pool.csv`: e.g. GP EX_EX Rel L² DEL 0.307 / 0.340 / 0.335; TabPFN damage-R² ranks 77 / 10 / 5 (global), 79 / 10 / 7 (EX_EX). |
+| Raw time-series label audit (App. M) | `python -m analyses.audit.run_audit --package_dir <audit_package>` | 4,410 labels of 147 simulations reproduced; maximum relative deviation 4.6e-16 (criterion ≤ 1e-6). See [`analyses/audit/README.md`](./analyses/audit/README.md). |
+
+Training commands for the retraining analyses (paper settings, 4 h per
+preset on one GPU):
+
+```bash
+# Alternative grids A and B (ref), best + extreme presets
+for v in A B; do for p in best extreme; do
+  python scripts/train/run.py \
+      --flagfile=analyses/grid_variants/configs/train_ref_${v}_${p}.cfg
+done; done
+# Condition-grouped random splits (r1 best + extreme, r2 and r3 best)
+for r in r1_best r1_extreme r2_best r3_best; do
+  python scripts/train/run.py \
+      --flagfile=analyses/grouped_random/configs/train_${r}.cfg
+done
+```
+
+**Figures.** Each script in [`figures/`](./figures) draws one paper
+figure with the shared style of `figures/paper_style.py` and writes to
+`outputs/figures/`:
+
+| Figure | Command | Input |
+| --- | --- | --- |
+| Crossover (E2) | `python -m figures.plot_crossover` | merged E2 benchmark, `outputs/within/{tower}/benchmark` |
+| Cross-tower bars (E3) | `python -m figures.plot_cross_tower_bars` | merged E3 benchmark, `outputs/cross/{held_out}/benchmark` |
+| Regime heatmap, family bars | `python -m figures.plot_heatmap_bars` | merged E2 benchmark |
+| Global vs EX_EX scatter | `python -m figures.plot_scatter_global_exex` | merged E2 benchmark |
+| E3 predicted vs true | `python -m figures.plot_scatter_e3` | E3 per-model `predictions.csv` |
+| Partition planes, spacing histograms, lifetime damage, split sensitivity | `python -m figures.plot_dataset_figures` | released dataset + `split_sensitivity` output |
+| Simulation outputs | `python -m figures.plot_simulation_outputs --openfast_out <.out> --render <png>` | one raw OpenFAST output (not in the tabular release) |
 
 ## Headline findings
 
 **Within-tower (E2): the global rank-1 fails at the boundary.** On every
 tower, the AutoGluon default ensemble (`WeightedEnsemble_L2`) ranks first
-globally yet is overtaken at the worst-case wind-and-wave extrapolation
-cell (EX_EX) by a neural-network family the greedy selector systematically
-excludes:
+globally yet drops to EX_EX ranks 23 / 11 / 11 (REF / OPT1 / OPT2) at the
+worst-case wind-and-wave extrapolation cell, where a bagged FastAI network
+(`NeuralNetFastAI_r102_BAG_L1`, global ranks 79 / 73 / 69) wins. The
+crossover holds under every tested partition setting that keeps an
+extrapolation region, after retraining on two other grids, and outside
+AutoML (classical surrogates, TabPFN, XGBoost):
 
 <p align="center">
   <img src="docs/figures/crossover.png" alt="Global vs EX_EX cross-over" width="500"/>

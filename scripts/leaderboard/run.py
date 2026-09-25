@@ -30,6 +30,11 @@ flags.DEFINE_integer("n_bootstrap", 2000, "Number of bootstrap resamples.")
 flags.DEFINE_integer("bootstrap_seed", 42, "Bootstrap RNG seed.")
 flags.DEFINE_float("bootstrap_alpha", 0.05,
                    "Significance level; CI is (1 - alpha). 0.05 -> 95% CI.")
+flags.DEFINE_enum(
+    "bootstrap_cluster", "condition", ["condition", "row"],
+    "Bootstrap resampling unit: 'condition' resamples whole operating "
+    "conditions (all seeds and sections of a wind/wave condition; paper "
+    "setting), 'row' resamples test rows i.i.d. (original scheme).")
 
 # Regenerate AutoGluon leaderboard_test.csv
 flags.DEFINE_boolean(
@@ -68,7 +73,8 @@ def main(_):
                                    n_bootstrap=FLAGS.n_bootstrap,
                                    bootstrap_seed=FLAGS.bootstrap_seed,
                                    bootstrap_alpha=FLAGS.bootstrap_alpha,
-                                   max_models=FLAGS.max_models)
+                                   max_models=FLAGS.max_models,
+                                   bootstrap_cluster=FLAGS.bootstrap_cluster)
 
     # Paper-style summary tables collected in the same subfolder as
     # the extended leaderboards (leaderboard_test_summaries/).

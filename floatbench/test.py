@@ -20,6 +20,7 @@ import pandas as pd
 from autogluon.tabular import TabularPredictor
 
 from floatbench.base_predictor import (BaseDamagePredictor)
+from floatbench.utils import condition_id
 
 
 class AGDamagePredictor(BaseDamagePredictor):
@@ -241,6 +242,7 @@ class AGDamagePredictor(BaseDamagePredictor):
         bootstrap_seed: int = 42,
         bootstrap_alpha: float = 0.05,
         max_models: int | None = None,
+        bootstrap_cluster: str = "condition",
     ) -> None:
         """Generates extended leaderboard CSVs with per-group/section metrics.
 
@@ -273,6 +275,12 @@ class AGDamagePredictor(BaseDamagePredictor):
                 Default 0.05 -> 95% CI.
             max_models: Dev flag — if set, only evaluate the first N
                 models (smoke-test the pipeline without the full pass).
+            bootstrap_cluster: Bootstrap resampling unit. ``"condition"``
+                (paper default) resamples whole operating conditions
+                (all seeds and sections of a wind/wave condition, derived
+                from ``sim_id``); ``"row"`` reproduces the original
+                row-level i.i.d. bootstrap. All models share the same
+                resamples (same seed), so paired differences are valid.
         """
 
         model_names = self.model.model_names()
@@ -295,6 +303,16 @@ class AGDamagePredictor(BaseDamagePredictor):
 
         y_true = df_test[self.target].astype(float).values
         y_true_del = self._compute_del(y_true)
+
+        boot_groups = None
+        if bootstrap and bootstrap_cluster == "condition":
+            if "sim_id" in df_test.columns:
+                boot_groups = condition_id(df_test["sim_id"].values)
+                logging.info("Bootstrap: resampling %d operating conditions.",
+                             np.unique(boot_groups).size)
+            else:
+                logging.warning("Bootstrap: no sim_id column, falling back "
+                                "to row-level resampling.")
 
         has_section = "section_name" in df_test.columns
         has_groups = any(col in df_test.columns
@@ -347,13 +365,17 @@ class AGDamagePredictor(BaseDamagePredictor):
                                                 bootstrap=bootstrap,
                                                 n_bootstrap=n_bootstrap,
                                                 seed=bootstrap_seed,
-                                                alpha=bootstrap_alpha)
+                                                alpha=bootstrap_alpha,
+                                                groups=boot_groups,
+                                                cluster=bootstrap_cluster)
             m_dmg = self._compute_error_metrics(y_true,
                                                 y_pred,
                                                 bootstrap=bootstrap,
                                                 n_bootstrap=n_bootstrap,
                                                 seed=bootstrap_seed,
-                                                alpha=bootstrap_alpha)
+                                                alpha=bootstrap_alpha,
+                                                groups=boot_groups,
+                                                cluster=bootstrap_cluster)
 
             rows_metrics.append({
                 "model": name,

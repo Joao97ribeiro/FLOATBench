@@ -63,6 +63,7 @@ class WindWaveDomainGrouper:
         extrap_edges: Optional[Sequence[float]] = None,
         kind_scaler: Literal["standard", "minmax", "robust"] = "standard",
         boundary_alpha: float = 0.1,
+        boundary_offset_mult: float = 1.0,
     ) -> None:
         """Initializes the domain grouper.
 
@@ -84,6 +85,14 @@ class WindWaveDomainGrouper:
             kind_scaler: Scaler type ('standard', 'minmax', 'robust').
             boundary_alpha: Alpha parameter for the alpha shape boundary.
                 Smaller values produce tighter (more concave) hulls.
+            boundary_offset_mult: Multiplier on the boundary tolerance
+                ``epsilon = interp_edges[0] * s`` (``s`` = train spacing
+                scale in standardized units). A point is labelled
+                extrapolation only if it lies outside the alpha shape and
+                at least ``boundary_offset_mult * epsilon`` from its
+                boundary. 1.0 is the released (paper) setting; 0.0
+                removes the tolerance. Used by the partition sensitivity
+                analysis.
         """
 
         self.wind_cols: List[str] = list(wind_cols)
@@ -111,6 +120,7 @@ class WindWaveDomainGrouper:
                                           if extrap_edges else [])
 
         self.boundary_alpha = boundary_alpha
+        self.boundary_offset_mult = float(boundary_offset_mult)
 
         # state
         self._wind_scale: Optional[float] = None
@@ -526,10 +536,15 @@ class WindWaveDomainGrouper:
         Returns:
             Tuple of (updated labels, fitted AlphaShape).
         """
-        # Offset = In-train threshold converted to original space.
-        # Points outside the alpha shape but closer than this to the
-        # boundary are kept as interpolation (not extrapolation).
-        boundary_offset = edges[0] * scale
+        # Boundary tolerance epsilon = tau * s, with tau the In-train
+        # threshold (edges[0]) and s the train spacing scale, which is
+        # computed in standardized units. Epsilon is compared against the
+        # distance to the alpha-shape boundary, which is measured in the
+        # original feature units (0.049 in the wind plane and 0.021 in the
+        # wave plane for the released split). Points outside the alpha
+        # shape but closer than epsilon to the boundary are kept as
+        # interpolation (a slack band against boundary-proximate points).
+        boundary_offset = self.boundary_offset_mult * edges[0] * scale
 
         # Use original (unscaled) points for alpha shape if available,
         # so the boundary follows the real data shape (not distorted

@@ -524,7 +524,7 @@ AutoML (classical surrogates, TabPFN, XGBoost):
 **Cross-tower (E3): transfer is asymmetric.** Training on a set that
 includes the baseline `ref` generalises well to the perturbed geometries
 (rank-1 Rel L² DEL of 0.067 / 0.098). Training without `ref`, however,
-collapses to 0.423 — a 4–6× degradation:
+collapses to 0.423, a 4 to 6× degradation:
 
 <p align="center">
   <img src="docs/figures/cross_tower.png" alt="Cross-tower transfer" width="500"/>

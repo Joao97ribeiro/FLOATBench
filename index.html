@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>FLOATBench: A Dataset and Benchmark for Floating Offshore Wind Turbine Tower Fatigue</title>
+  <title>FLOATBench: A Tabular Dataset and Benchmark for Fatigue Prediction on Floating Offshore Wind Turbine Towers</title>
   <meta name="description" content="FLOATBench: a tabular dataset and regime-aware benchmark for fatigue prediction on 22 MW floating offshore wind turbine towers.">
-  <meta property="og:title" content="FLOATBench: A Dataset and Benchmark for Floating Offshore Wind Turbine Tower Fatigue">
+  <meta property="og:title" content="FLOATBench: A Tabular Dataset and Benchmark for Fatigue Prediction on Floating Offshore Wind Turbine Towers">
   <meta property="og:description" content="582,120 section-level fatigue damage labels, a regime-aware split and an interactive leaderboard of tabular surrogates.">
   <meta property="og:image" content="figures/overview.png">
   <link rel="icon" type="image/png" href="figures/logo.png">
@@ -23,7 +23,7 @@
     <div class="container is-max-desktop">
       <img src="figures/logo.png" alt="FLOATBench logo" style="max-width:320px;margin:0 auto 1rem;display:block;">
       <h1 class="title is-2 publication-title" style="margin-bottom:1.5rem;">
-        FLOATBench: A Dataset and Benchmark for Floating Offshore Wind Turbine Tower Fatigue
+        FLOATBench: A Tabular Dataset and Benchmark for Fatigue Prediction on Floating Offshore Wind Turbine Towers
       </h1>
       <div class="is-size-5 publication-authors">
         <span class="author-block"><a href="mailto:jpar@mit.edu">João Alves Ribeiro</a><sup>1</sup>,</span>
@@ -76,7 +76,7 @@
     </div>
 
     <p class="has-text-centered" style="font-size:1.25rem;font-style:italic;color:#2d3748;margin-bottom:2rem;font-weight:500;">
-      A regime-aware benchmark that shows where tabular fatigue surrogates stop being reliable.
+      Does model selection stay valid as predictions move from interpolation to extrapolation?
     </p>
     <figure class="image" style="margin-bottom:1.5rem;">
       <img src="figures/overview.png" alt="FLOATBench overview: dataset of three towers, regime-aware split, benchmark protocols">
@@ -86,23 +86,23 @@
     <div class="highlights">
       <div class="box has-text-centered highlight">
         <p class="title is-3" style="color:#b02c27;">582,120</p>
-        <p class="subtitle is-6">section-level fatigue damage labels on three 22 MW towers</p>
+        <p class="subtitle is-6">per-section fatigue-damage labels from 19,404 OpenFAST simulations</p>
       </div>
       <div class="box has-text-centered highlight">
-        <p class="title is-3" style="color:#294366;">19,404</p>
-        <p class="subtitle is-6">OpenFAST simulations (1,078 wind–wave states × 6 seeds per tower)</p>
+        <p class="title is-3" style="color:#294366;">3 towers</p>
+        <p class="subtitle is-6">22 MW geometries over 1,078 wind–wave operating conditions</p>
       </div>
       <div class="box has-text-centered highlight">
-        <p class="title is-3" style="color:#b02c27;">3 × 3</p>
-        <p class="subtitle is-6">regime cells: in-train, interpolation and extrapolation on wind × wave</p>
+        <p class="title is-3" style="color:#b02c27;">1 → 23</p>
+        <p class="subtitle is-6">the global rank-1 model in joint wind-and-wave extrapolation</p>
       </div>
       <div class="box has-text-centered highlight">
-        <p class="title is-3" style="color:#294366;">1 → 23</p>
-        <p class="subtitle is-6">global rank-1 model in joint wind-and-wave extrapolation</p>
+        <p class="title is-3" style="color:#294366;">1.5–1.9×</p>
+        <p class="subtitle is-6">the best extrapolation error left by validation-based selection</p>
       </div>
       <div class="box has-text-centered highlight">
-        <p class="title is-3" style="color:#7cc0cd;">Open</p>
-        <p class="subtitle is-6">dataset, harness and 735 trained surrogates released</p>
+        <p class="title is-3" style="color:#7cc0cd;">735</p>
+        <p class="subtitle is-6">trained surrogates and 7 standalone baselines released</p>
       </div>
     </div>
   </div>
@@ -113,10 +113,9 @@
   <div class="container is-max-desktop">
     <h2 class="title is-3">Abstract</h2>
     <div class="content has-text-justified">
-      <p>Most of the world's offshore wind resource lies in waters too deep for fixed-bottom foundations, making floating offshore wind turbines (FOWTs) essential for deep-water deployment. As the industry scales toward 22 MW class designs, tower fatigue becomes increasingly critical because larger structures amplify the coupled aero-hydro-servo-elastic loads induced by continuous wind and wave excitation. Accurate fatigue-damage prediction is therefore central to certification, design optimization, and cost reduction. Yet the field lacks a shared surrogate benchmark: studies report different simulations, splits, and metrics, making methods difficult to compare.</p>
-      <p>We present <strong>FLOATBench</strong>, a public tabular benchmark with 582,120 per-section fatigue-damage labels across three 22 MW FOWT tower geometries, derived from 19,404 high-fidelity OpenFAST simulations across the three towers (6,468 per tower: 1,078 aligned wind/wave operating points × six turbulence seeds), labeled at 30 cross-sections per tower. <strong>FLOATBench</strong> includes a regime-aware alpha-shape partition of the joint wind/wave operating envelope, stratifying test points into in-train, interpolation, and extrapolation regimes. It is paired with a reproducible evaluation harness covering three protocol levels: random validation (E1), within-tower regime-aware evaluation (E2), and cross-tower transfer (E3).</p>
-      <p>The regime-aware protocol reveals rank shifts between global and extrapolation performance that random-split leaderboards cannot detect. To the authors' knowledge, <strong>FLOATBench</strong> is the first FOWT fatigue benchmark for tabular surrogate modeling, and offers an evaluation protocol that generalizes to engineering surrogates defined over physical operating envelopes.</p>
-      <p>The <code>opt1</code> and <code>opt2</code> towers are fatigue redesigns of the IEA 22 MW reference tower produced with <a href="https://joao97ribeiro.github.io/FLOAT/">FLOAT</a>.</p>
+      <p>Tabular surrogates are commonly ranked on random validation splits. Yet a surrogate is used to predict wherever no simulation exists, both between training points (interpolation) and beyond the training domain (extrapolation), and random splits cannot tell the two apart, so the selected model may fail where it extrapolates. We introduce <strong>FLOATBench</strong>, a tabular dataset and benchmark for fatigue prediction on floating offshore wind turbine towers that tests whether model selection stays valid as predictions move from interpolation to extrapolation. It provides 582,120 per-section fatigue-damage labels from 19,404 OpenFAST simulations of three 22 MW tower geometries over 1,078 wind–wave operating conditions.</p>
+      <p><strong>FLOATBench</strong> is distinguished by a regime-aware partition that places each test point relative to the training domain as in-train, interpolation, or extrapolation, so extrapolation depth is controlled by construction, and by cross-tower transfer with condition-level bootstrap intervals. Across 735 trained surrogates and seven standalone baselines on three towers, the global rank-1 model falls to ranks 23, 11, and 11 in joint wind-and-wave extrapolation, where a network ranked 69th–79th globally wins, and validation-based selection leaves 1.5–1.9× the best available extrapolation error. In cross-tower transfer, Rel L² error is 0.067–0.098 when the reference tower is in training versus 0.423 when it is held out.</p>
+      <p>Robustness checks show that the crossover holds across all non-degenerate partition settings and after retraining on two alternative training grids. Limitations: one 22 MW design family and aligned power-production conditions. Resources: dataset, code, and trained surrogates are released.</p>
     </div>
   </div>
 </section>
@@ -126,12 +125,19 @@
   <div class="container is-max-desktop">
     <h2 class="title is-3">Dataset</h2>
     <div class="content has-text-justified">
-      <p>FLOATBench covers three 22 MW floating tower geometries: the IEA-22-280-RWT reference tower (<span class="tw-ref">REF</span>) and two fatigue redesigns produced with <a href="https://joao97ribeiro.github.io/FLOAT/">FLOAT</a> (<span class="tw-opt1">OPT1</span>, <span class="tw-opt2">OPT2</span>). Each tower is simulated in OpenFAST over the same operating envelope: 22 wind speeds × 7 significant wave heights × 7 peak periods = 1,078 aligned wind–wave conditions, each with 6 turbulence seeds (6,468 simulations of 600 s). Fatigue damage is computed at 30 tower sections, from the base (section 1) to the top (section 30), giving 194,040 labels per tower and 582,120 in total.</p>
+      <p><strong>Operating envelope.</strong> Each tower is simulated across a 22 × 7 × 7 grid of environmental conditions: 22 mean hub-height wind speeds at the midpoints of 1 m/s bins from cut-in (3 m/s) to cut-out (25 m/s), and, for each wind speed, seven significant wave heights <em>H<sub>s</sub></em> with seven peak periods <em>T<sub>p</sub></em> per <em>H<sub>s</sub></em>, sampled from the joint wind–wave operating distribution used in <a href="https://joao97ribeiro.github.io/FLOAT/">FLOAT</a>. This yields 49 sea states per wind speed and 1,078 unique (wind, wave) operating points per tower. Wind and waves are aligned.</p>
+      <p><strong>Simulation setup.</strong> All simulations follow IEC 61400-3-2 design load case (DLC) 1.2 (normal power production) and run in OpenFAST. Each operating point is simulated with 6 independent turbulence seeds, giving 6,468 ten-minute simulations per tower; runs last 1,000 s with the final 600 s post-processed. Each run records 88 time series at 10 Hz (turbine, tower and platform outputs), about 190 GB across the 19,404 runs of the three towers, at roughly one CPU-hour per run.</p>
+      <p><strong>Damage labels.</strong> For each operating condition and each of the 30 tower sections, the bending-moment time series is converted to stress, rainflow-counted and Miner-summed against the DNV-RP-C203 S–N curve E, giving the cumulative damage <em>D</em>, the released label. The load-equivalent transform DEL ∝ <em>D</em><sup>1/<em>m</em></sup> with <em>m</em> = 3 is used as the regression target.</p>
+      <p><strong>Tower geometries.</strong> Three towers share the same three-column semi-submersible platform, controller and mooring. <span class="tw-ref">REF</span> is the IEA-22-280-RWT baseline tower, designed for fixed-bottom conditions without explicit fatigue constraints (<em>D</em> ≈ 32 at the base, about 9 months of life under Miner's rule on a 25-year horizon). <span class="tw-opt1">OPT1</span> is an intermediate fatigue-aware redesign produced by <a href="https://joao97ribeiro.github.io/FLOAT/">FLOAT</a> (<em>D</em> from 0.49 to 1.28 along the height), and <span class="tw-opt2">OPT2</span> the final iterate targeting <em>D</em> ≤ 0.90 (labels from 0.78 to 0.94). The redesigns change the outer diameter and wall thickness at constant tower height (149.386 m). Each tower is discretised into 30 sections, with damage labels at the section midpoints: 194,040 rows per tower and 582,120 in total.</p>
     </div>
+    <figure class="image" style="margin-bottom:0.5rem;">
+      <img src="figures/simulation_pipeline.png" alt="OpenFAST outputs and damage pipeline">
+    </figure>
+    <p class="is-size-7 has-text-grey" style="margin-bottom:2rem;">FLOATBench OpenFAST outputs and damage pipeline. Each simulation yields 88 time series at 10 Hz around the IEA-22-280-RWT on a three-column semi-submersible: simulations → time series → bending moments → stress → rainflow → S–N + Miner → damage labels.</p>
     <figure class="image" style="margin-bottom:0.5rem;">
       <img src="figures/figure_geom_damage.png" alt="Outer diameter, wall thickness and lifetime damage of the three towers">
     </figure>
-    <p class="is-size-7 has-text-grey" style="margin-bottom:2rem;">Outer diameter, wall thickness and 25-year fatigue damage along the height of the three towers. REF reaches a lifetime damage of about 32 at the base (failure at <em>D</em> = 1); the redesigns bring it close to 1.</p>
+    <p class="is-size-7 has-text-grey" style="margin-bottom:2rem;">Geometry and lifetime damage profiles along the tower height for the three released towers REF, OPT1 and OPT2.</p>
 
     <h3 class="title is-5">Files (per tower, on Hugging Face)</h3>
     <div class="table-container">
@@ -172,6 +178,24 @@
         </tbody>
       </table>
     </div>
+
+    <h3 class="title is-5" style="margin-top:1.5rem;">Terms used on this page</h3>
+    <div class="table-container">
+      <table class="table is-narrow is-fullwidth schema">
+        <tbody>
+          <tr><td class="grp">Wind speed <em>V</em></td><td>Mean wind speed at hub height, in m/s. The 22 levels are the midpoints of 1 m/s bins between cut-in (3 m/s) and cut-out (25 m/s): 3.5, 4.5, …, 24.5 m/s. Its standard deviation over the 10 minutes is used as a proxy of turbulence intensity.</td></tr>
+          <tr><td class="grp">Wave height <em>H<sub>s</sub></em></td><td>Significant wave height, in m: roughly the average height of the highest third of the waves. It measures how rough the sea is.</td></tr>
+          <tr><td class="grp">Wave period <em>T<sub>p</sub></em></td><td>Peak wave period, in s: the period of the waves that carry the most energy. Long periods mean long swell, short periods a choppy sea.</td></tr>
+          <tr><td class="grp">Turbulence seed</td><td>One random realisation of turbulent wind for the same mean conditions. Each condition is simulated with 6 seeds, so the same <em>U</em>, <em>H<sub>s</sub></em>, <em>T<sub>p</sub></em> gives 6 slightly different results.</td></tr>
+          <tr><td class="grp">Tower section</td><td>One of the 30 slices of the tower where fatigue is evaluated: section 1 is the base, section 30 the top.</td></tr>
+          <tr><td class="grp">Fatigue damage <em>D</em></td><td>Fraction of the fatigue life consumed (Miner's rule). Per simulation it is the damage of 600 s; summed over 25 years with <code>damage_weight</code>, <em>D</em> = 1 means the section reaches its fatigue limit.</td></tr>
+          <tr><td class="grp">DEL</td><td>Damage equivalent load: the constant-amplitude load that would cause the same damage, DEL ∝ <em>D</em><sup>1/3</sup>. Surrogates are trained and scored on this target.</td></tr>
+          <tr><td class="grp">Rel L² DEL</td><td>Relative L² error of the predicted DEL, ‖prediction − truth‖ / ‖truth‖ over the test rows: the primary ranking metric (0.05 is about 5% error; lower is better). MRE, the point-wise mean relative error, is the per-regime metric.</td></tr>
+          <tr><td class="grp">Regimes</td><td>Where a test point lies relative to the training data, labelled separately for wind and for waves: <span class="tag tag-it">In-train</span> (IT) close to training points, <span class="tag tag-ip">Interpolate</span> (IP) inside the training region but between points, <span class="tag tag-ex">Extrapolate</span> (EX) outside it. A cell such as EX_IT reads wind label first, wave label second; EX_EX is extrapolation in both wind and waves, the hardest case.</td></tr>
+          <tr><td class="grp">E1 / E2 / E3</td><td>The three protocols: random split (E1), regime-aware split within one tower (E2), and training on two towers and testing on the third (E3).</td></tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </section>
 
@@ -179,7 +203,7 @@
 <section class="section has-background-light" id="explorer">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Dataset Explorer</h2>
-    <p class="subtitle is-6">All 6,468 simulations of the operating envelope, with the fatigue damage each one produces at every tower section. Pick a view, colour the points by regime or by damage, and click any simulation to see its damage along the tower for the three geometries.</p>
+    <p class="subtitle is-6">All 6,468 simulations of the operating envelope, read directly from the Hugging Face dataset <a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench">DeCoDELab/FLOATBench</a> when this page opens. Pick a view, colour the points by regime or by damage, and click any simulation to see its damage along the tower for the three geometries, or switch to the 25-year lifetime damage.</p>
     <p class="is-size-7 has-text-grey" id="ex-source" style="margin-top:-0.75rem;margin-bottom:1rem;"><span class="icon"><i class="fas fa-spinner fa-spin"></i></span> Loading the dataset from Hugging Face (DeCoDELab/FLOATBench)…</p>
 
     <div class="box">
@@ -188,9 +212,9 @@
           <label class="label is-small" for="ex-view">View</label>
           <div class="select is-fullwidth is-small">
             <select id="ex-view">
-              <option value="3d">Envelope 3D (U, Hs, Tp)</option>
-              <option value="wind">Wind plane (mean U, std U)</option>
-              <option value="wave">Wave plane (Hs, Tp)</option>
+              <option value="3d">3D: wind speed, wave height, wave period</option>
+              <option value="wind">Wind: mean speed vs turbulence</option>
+              <option value="wave">Waves: height Hs vs period Tp</option>
             </select>
           </div>
         </div>
@@ -234,13 +258,19 @@
         <p class="how"><strong>How to read.</strong> Each point is one 600 s OpenFAST simulation. In the 3D view the axes are the three envelope inputs; the six seeds of a condition sit side by side because their realised mean wind speed differs slightly. Colour by regime to see which simulations are used for training and how far each test point lies from them; colour by damage to see how fatigue grows with wind and waves. Drag to rotate, scroll to zoom, click a point to select it.</p>
       </div>
       <div class="column is-5">
+        <div class="buttons has-addons is-centered" id="profile-mode" style="margin-bottom:0.25rem;">
+          <button type="button" class="button is-small is-dark is-selected" data-mode="sim">Selected simulation (600 s)</button>
+          <button type="button" class="button is-small" data-mode="life">Lifetime (25 years)</button>
+        </div>
         <div id="plot-profile" class="plot plot-tall"></div>
-        <p class="how"><strong>How to read.</strong> Damage of the selected simulation at each of the 30 sections, for the three towers under the same wind and waves (log scale: each labelled power of ten is 10× the previous one). The dotted line marks the section chosen with the slider.</p>
+        <p class="how"><strong>How to read.</strong> <em>Selected simulation:</em> damage of one 600 s run at each of the 30 sections, for the three towers under the same wind and waves (log scale: each labelled power of ten is 10× the previous one). The dotted line marks the section chosen with the slider. <em>Lifetime:</em> Σ damage × <code>damage_weight</code> over all 6,468 simulations, the 25-year damage of each section; <em>D</em> = 1 is the fatigue limit.</p>
+        <div id="sim-details">
         <dl class="sim-card" id="sim-card"></dl>
         <button class="button is-rounded is-dark is-small" id="sim-hf" type="button">
           <span class="icon"><i class="fas fa-database"></i></span><span>Load its 30 rows from Hugging Face</span>
         </button>
         <div class="is-size-7" id="sim-hf-status" style="margin-top:0.6rem;"></div>
+        </div>
       </div>
     </div>
   </div>
@@ -304,13 +334,20 @@ hf download DeCoDELab/FLOATBench \
   </div>
 </section>
 
-<!-- ============ REGIME SPLIT ============ -->
+<!-- ============ BENCHMARK PROTOCOL ============ -->
 <section class="section has-background-light" id="split">
   <div class="container is-max-desktop">
-    <h2 class="title is-3">Regime-Aware Split</h2>
+    <h2 class="title is-3">Benchmark Protocol</h2>
+    <h3 class="title is-5">Regime-aware partition</h3>
     <div class="content has-text-justified">
-      <p>Each test simulation is labelled twice: once in the wind plane (mean and standard deviation of wind speed) and once in the wave plane (H<sub>s</sub>, T<sub>p</sub>). A point close to the training data is <span class="tag tag-it">In-train</span>. A point inside the concave training hull (alpha shape, α = 0.1) but farther away is <span class="tag tag-ip">Interpolate</span>. A point outside the hull by more than a tolerance is <span class="tag tag-ex">Extrapolate</span>. Crossing the two labels gives nine regime cells.</p>
-      <p>The training grid holds out the edge wind levels (1, 8, 15, 22 of 22) and the edge and centre sea states (1, 4, 7 of 7 for both H<sub>s</sub> and T<sub>p</sub>), so extrapolation depth is controlled by construction. The grid below counts test simulations per cell (the same for every tower).</p>
+      <p><strong>Train/test split.</strong> From the 22 × 7 × 7 grid, test holds the extreme and middle indices on both the wind and wave axes, leaving 18 of 22 wind speeds and a 4 × 4 inner wave patch on the train side. All 6 seeds of a condition stay in the same fold, to prevent train–test leakage. This yields 51,840 train and 142,200 test rows per tower (about 27/73). Unlike an i.i.d. 80/20 split, the partition induces a structured covariate shift along both axes: the test set is larger than the training set and lies outside its support, so every extrapolation region is densely sampled.</p>
+      <p><strong>Regime labelling.</strong> Each test point is labelled <span class="tag tag-it">In-train</span>, <span class="tag tag-ip">Interpolation</span> or <span class="tag tag-ex">Extrapolation</span> (IT, IP, EX) independently in the wind (mean <em>V</em>, std <em>V</em>) and wave (<em>H<sub>s</sub></em>, <em>T<sub>p</sub></em>) subspaces:</p>
+      <ol>
+        <li><strong>Train spacing.</strong> The mean nearest-neighbour distance between training points, in standardised units, sets the spacing scale.</li>
+        <li><strong>Distance-based grouping.</strong> A test point whose nearest-training distance, normalised by that scale, is at most 0.5 is IT; the rest are provisionally IP.</li>
+        <li><strong>Boundary override.</strong> A concave hull (alpha shape, α = 0.1) bounds the training support. Test points outside the hull and at least a tolerance ε from its boundary (0.049 in the wind plane, 0.021 in the wave plane) become EX; points just outside but within the tolerance stay IP.</li>
+      </ol>
+      <p>Crossing the two labels gives nine joint regimes, with EX_EX (extrapolation on both axes) the worst case. A random split samples test points from the training envelope and leaves every extrapolation regime empty; the regime-aware partition populates all nine. The grid counts test simulations per cell (the same for every tower).</p>
     </div>
     <div class="columns is-vcentered">
       <div class="column is-5">
@@ -320,7 +357,28 @@ hf download DeCoDELab/FLOATBench \
         <figure class="image">
           <img src="figures/regime_partition.png" alt="Regime partition in the wind and wave planes">
         </figure>
+        <p class="how">FLOATBench regime partition in the wind (left) and wave (right) subspaces; the training domain (alpha-shape hull) is shaded.</p>
       </div>
+    </div>
+
+    <h3 class="title is-5" style="margin-top:2rem;">Evaluation levels</h3>
+    <div class="columns">
+      <div class="column is-one-third"><div class="box">
+        <p class="title is-6">E1 · Random split</p>
+        <p class="is-size-7">A random partition matched in size to E2 (about 27/73), run on each tower. Same surrogates and training-set size as E2, so any difference reflects the partitioning alone.</p>
+      </div></div>
+      <div class="column is-one-third"><div class="box">
+        <p class="title is-6">E2 · Within tower</p>
+        <p class="is-size-7">The regime-aware partition, run on each tower. Results per regime (EX_EX as worst-case extrapolation) and per section (section 1 base vs section 30 top).</p>
+      </div></div>
+      <div class="column is-one-third"><div class="box">
+        <p class="title is-6">E3 · Cross tower</p>
+        <p class="is-size-7">Leave one tower out: train on two towers, test on the third (REF+OPT1 → OPT2, REF+OPT2 → OPT1, OPT1+OPT2 → REF), with the operating envelope fixed.</p>
+      </div></div>
+    </div>
+    <div class="content has-text-justified">
+      <p><strong>Surrogates.</strong> XGBoost, LightGBM, CatBoost, NeuralNetFastAI, NeuralNetTorch, ExtraTrees, RandomForest and TabM, trained through AutoGluon-Tabular 1.5.0 with the <code>best</code> and <code>extreme</code> presets under a 4-hour budget per run. Inputs: mean and std wind speed, <em>H<sub>s</sub></em>, <em>T<sub>p</sub></em>, and section height, radius and thickness; target: <em>D</em><sup>1/3</sup> (DEL format). This gives 82–96 models per tower for E1/E2 and 58–63 per fold for E3, plus seven standalone baselines (TabPFN, XGBoost, polynomial chaos, response surface, Gaussian process and others).</p>
+      <p><strong>Metrics.</strong> Rel L² (relative L²-norm error) is the primary ranking metric; MRE (point-wise mean relative error) is the per-regime metric. Every leaderboard number is a bootstrap mean ± standard deviation over <em>B</em> = 2,000 resamples of whole operating conditions.</p>
     </div>
   </div>
 </section>
@@ -329,7 +387,7 @@ hf download DeCoDELab/FLOATBench \
 <section class="section" id="leaderboard">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Leaderboard</h2>
-    <p class="subtitle is-6">Within-tower benchmark (E2): every surrogate of the AutoGluon <code>best</code> and <code>extreme</code> pools, scored by relative L² error on the damage equivalent load (Rel L² DEL, lower is better). Switch the regime to see how the ranking changes when only extrapolation points count. Click a row to see its error across the nine regime cells.</p>
+    <p class="subtitle is-6">Within-tower benchmark (E2): every surrogate of the AutoGluon <code>best</code> and <code>extreme</code> pools, scored by relative L² error on the damage equivalent load (Rel L² DEL, lower is better). Switch the regime to see how the ranking changes when only extrapolation points count (EX_EX = test points outside the training data in both wind and waves; see <a href="#dataset">Terms used on this page</a>). Click a row to see its error across the nine regime cells.</p>
 
     <div class="box">
       <div class="columns is-multiline is-vcentered">
@@ -345,7 +403,7 @@ hf download DeCoDELab/FLOATBench \
             <select id="lb-regime">
               <option value="Global">Global (all test points)</option>
               <optgroup label="Wind × wave cell">
-                <option value="EX_EX" selected>EX_EX: extrapolate wind and wave</option>
+                <option value="EX_EX" selected>EX_EX (wind + wave extrapolation)</option>
                 <option value="EX_IP">EX_IP</option><option value="EX_IT">EX_IT</option>
                 <option value="IP_EX">IP_EX</option><option value="IP_IP">IP_IP</option><option value="IP_IT">IP_IT</option>
                 <option value="IT_EX">IT_EX</option><option value="IT_IP">IT_IP</option><option value="IT_IT">IT_IT</option>
@@ -371,42 +429,177 @@ hf download DeCoDELab/FLOATBench \
       <div class="chips" id="lb-families" role="group" aria-label="Filter by model family"></div>
     </div>
 
-    <div class="columns">
-      <div class="column is-7">
-        <div class="table-container lb-table-wrap"><table class="table is-narrow is-hoverable is-fullwidth data lb" id="lb-table"></table></div>
-      </div>
-      <div class="column is-5">
+    <div class="table-container lb-table-wrap"><table class="table is-narrow is-hoverable is-fullwidth data lb" id="lb-table"></table></div>
+    <div class="columns" style="margin-top:1rem;">
+      <div class="column is-6">
         <div id="plot-crossover" class="plot"></div>
         <p class="how"><strong>How to read.</strong> One point per model. On the dotted diagonal a model keeps its Global rank in the selected regime. Points far below the diagonal rank much better in that regime than globally; points far above rank much worse. With EX_EX selected, the networks that win in extrapolation sit bottom right.</p>
-        <div id="plot-heat" class="plot plot-short"></div>
-        <p class="how"><strong>How to read.</strong> Rel L² DEL of the selected model in each of the nine regime cells (rows: wind label, columns: wave label). Darker red means larger error. Click a table row or a point above to change the model.</p>
+      </div>
+      <div class="column is-6">
+        <div id="plot-heat" class="plot"></div>
+        <p class="how"><strong>How to read.</strong> Rel L² DEL of the selected model in each of the nine regime cells (rows: wind label, columns: wave label). Darker red means larger error. Click a table row or a point in any plot to change the model.</p>
       </div>
     </div>
     <p class="is-size-7 has-text-grey">Point estimates on the full test set. Condition-level bootstrap intervals are produced by <code>scripts/leaderboard/</code>. Rank changes are relative to the Global ranking of the same pool.</p>
+
+    <h3 class="title is-5" style="margin-top:2.5rem;">Accuracy vs cost</h3>
+    <div class="columns is-vcentered">
+      <div class="column is-8">
+        <div id="plot-efficiency" class="plot plot-tall"></div>
+      </div>
+      <div class="column is-4">
+        <label class="label is-small" for="eff-x">Cost on the horizontal axis</label>
+        <div class="select is-fullwidth is-small" style="margin-bottom:1rem;">
+          <select id="eff-x">
+            <option value="train_s">Training time</option>
+            <option value="latency_ms">Inference latency per row</option>
+            <option value="size_mb">Model size on disk</option>
+          </select>
+        </div>
+        <p class="how"><strong>How to read.</strong> One point per model of the selected tower, with its error in the regime chosen above (lower is better) against its cost (left is cheaper, log scale). The dashed line is the Pareto front: no other model is both cheaper and more accurate. Switch the regime to EX_EX to see which models stay efficient in extrapolation. Training time is the AutoGluon fit time on one GPU workstation; for stacked models (L2, L3) and the weighted ensemble it includes their base models, while the size on disk counts only the model itself. Bagged RandomForest and ExtraTrees are fit once with out-of-bag estimates, so they train in seconds.</p>
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- ============ FINDINGS ============ -->
+<!-- ============ RESULTS ============ -->
 <section class="section has-background-light" id="findings">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Results</h2>
-    <div class="columns">
+
+    <div class="result-block">
+      <p class="result-tag">E1 · Random split</p>
+      <h3 class="title is-5">Everything looks easy, the wrong models win</h3>
+      <div class="content">
+        <p>Under a random split, all top-10 surrogates appear strong: roughly 2–4% Rel L² DEL across towers, with overlapping confidence intervals between adjacent ranks. But the test set contains no hard regime: random validation leaves every extrapolation regime empty by construction. A condition-grouped random split is equally optimistic (0.0198 vs 0.0191 on REF), so the cause is absent extrapolation, not seed leakage.</p>
+      </div>
+      <p class="takeaway">A damage benchmark needs a regime-aware split, not a random one, to choose the right model.</p>
+    </div>
+
+    <div class="result-block">
+      <p class="result-tag">E2 · Within tower</p>
+      <h3 class="title is-5">Different regimes pick different winners</h3>
+      <div class="columns">
+        <div class="column is-6">
+          <div class="content">
+            <p><strong>The Global winner loses at the wind-and-wave extrapolation regime.</strong> EX_EX is the deepest extrapolation cell and has the highest error on every tower. The Global rank-1 <code>WeightedEnsemble_L2</code> drops to EX_EX ranks 23 / 11 / 11 (REF / OPT1 / OPT2), while the EX_EX rank-1 <code>NeuralNetFastAI_r102_BAG_L1</code> sits at Global ranks 79 / 73 / 69.</p>
+          </div>
+          <figure class="image"><img src="figures/crossover.png" alt="Global and EX_EX Rel L2 DEL of the Global rank-1 and EX_EX rank-1 models"></figure>
+          <p class="how">Rel L² DEL, Global vs EX_EX. The Global winner drops at EX_EX, where a low-ranked network wins.</p>
+        </div>
+        <div class="column is-6">
+          <p class="is-size-7 has-text-weight-semibold" style="margin-bottom:0.4rem;">Main results (E2): Rel L² DEL, Global / EX_EX</p>
+          <div class="table-container">
+            <table class="table is-narrow is-fullwidth schema results">
+              <thead><tr><th>Model</th><th class="num tw-ref">REF</th><th class="num tw-opt1">OPT1</th><th class="num tw-opt2">OPT2</th></tr></thead>
+              <tbody>
+                <tr><td>Ensemble<sup>†</sup></td><td class="num"><b>0.063</b> / 0.101</td><td class="num"><b>0.069</b> / 0.115</td><td class="num"><b>0.070</b> / 0.117</td></tr>
+                <tr><td>FastAI NN<sup>*</sup></td><td class="num">0.079 / <b>0.054</b></td><td class="num">0.085 / <b>0.075</b></td><td class="num">0.081 / <b>0.073</b></td></tr>
+                <tr><td>TabPFN</td><td class="num">0.072 / 0.104</td><td class="num">0.072 / 0.099</td><td class="num">0.071 / 0.090</td></tr>
+                <tr><td>XGBoost</td><td class="num">0.078 / 0.115</td><td class="num">0.078 / 0.150</td><td class="num">0.079 / 0.153</td></tr>
+                <tr><td>PCE</td><td class="num">0.087 / 0.074</td><td class="num">0.108 / 0.117</td><td class="num">0.104 / 0.118</td></tr>
+                <tr><td>Resp. surface</td><td class="num">0.087 / 0.073</td><td class="num">0.143 / 0.194</td><td class="num">0.137 / 0.189</td></tr>
+                <tr><td>GP</td><td class="num">0.131 / 0.307</td><td class="num">0.147 / 0.340</td><td class="num">0.145 / 0.335</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p class="how"><sup>†</sup>Global and <sup>*</sup>EX_EX rank-1 of the AutoGluon pool; other rows are standalone baselines.</p>
+          <div class="content is-size-6">
+            <p><strong>The crossover is robust and not an AutoML artifact.</strong> It holds for every partition setting that still leaves an extrapolation region, on all three towers, and after retraining the pool on two other training grids. TabPFN and tuned XGBoost do not beat the EX_EX winner. Selecting on validation leaves 1.5–1.9× the best available EX_EX error; the ensemble puts 86–88% of its weight on tree models, which under-predict beyond the training domain.</p>
+          </div>
+        </div>
+      </div>
+      <div class="columns">
+        <div class="column is-4"><div class="content is-size-6"><p><strong>The crossover is a family effect.</strong> A tree-weighted ensemble wins globally and bagged networks win at EX_EX; the EX_EX top-10 is dominated by NeuralNet variants on all three towers, while TabM degrades most.</p></div></div>
+        <div class="column is-4"><div class="content is-size-6"><p><strong>Wind drives the extrapolation.</strong> By model family, error grows 6–20× from In-train to Extrapolation on the wind axis, but only 1.1–1.4× on the wave axis.</p></div></div>
+        <div class="column is-4"><div class="content is-size-6"><p><strong>Sections pick different winners.</strong> On REF no model wins both the base and the top; on OPT1/OPT2 the Global rank-1 keeps the base but loses section 30 to <code>NeuralNetTorch_r22</code>.</p></div></div>
+      </div>
+      <p class="takeaway">For damage prediction, the Global rank-1 does not remain best across regimes and sections: it loses at EX_EX and at the tower top.</p>
+    </div>
+
+    <div class="result-block">
+      <p class="result-tag">E3 · Cross tower</p>
+      <h3 class="title is-5">The rank-1 fails again, on geometry and on sections</h3>
+      <div class="columns is-vcentered">
+        <div class="column is-6">
+          <div class="content">
+            <p><strong>Transfer collapses on geometries far from training.</strong> Training on a set that includes REF generalises to the redesigned towers, with rank-1 Rel L² DEL of 0.067 (REF+OPT1 → OPT2) and 0.098 (REF+OPT2 → OPT1). Training without REF (OPT1+OPT2 → REF) reaches 0.423, a 4–6× increase: holding REF out under-predicts, consistent with its wider damage profile and most distinct geometry.</p>
+            <p><strong>Sections pick different winners across folds.</strong> The section 1 winner is a NeuralNet variant on all three folds, while <code>TabM_r52</code> wins section 30 on all three.</p>
+          </div>
+        </div>
+        <div class="column is-6">
+          <figure class="image"><img src="figures/cross_tower.png" alt="Rank-1 Rel L2 DEL per cross-tower fold"></figure>
+          <p class="how">Rank-1 Rel L² DEL per fold (model name in parentheses).</p>
+        </div>
+      </div>
+      <p class="takeaway">Across towers, the Global rank-1 again does not remain best across geometry and sections.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MORE RESULTS ============ -->
+<section class="section">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">More Results from the Paper</h2>
+    <p class="subtitle is-6">Figures from the appendix of the paper. Click a figure to open it at full size.</p>
+    <div class="columns is-multiline">
       <div class="column is-half">
         <div class="box">
-          <p class="title is-5">Within tower (E2): the global winner loses in wind-and-wave extrapolation</p>
-          <p>The global rank-1 <code>WeightedEnsemble_L2</code> drops to EX_EX ranks 23 / 11 / 11 (REF / OPT1 / OPT2). The EX_EX rank-1 <code>NeuralNetFastAI_r102_BAG_L1</code> sits at global ranks 79 / 73 / 69. The crossover holds under every partition setting that keeps an extrapolation region, after retraining on two alternative grids and against standalone baselines. Validation-based model selection does not recover it.</p>
-          <figure class="image" style="margin-top:1rem;"><img src="figures/crossover.png" alt="Global and EX_EX Rel L2 DEL of the Global rank-1 and EX_EX rank-1 models on the three towers"></figure>
-          <p class="how">Rel L² DEL of the two models on all test points (Global) and on the EX_EX cell only. The lines cross on every tower: the model that wins globally is not the one that wins in extrapolation.</p>
+          <p class="title is-6">Error across the nine regimes (E2)</p>
+          <figure class="image"><a href="figures/app_heatmap_regimes.png"><img src="figures/app_heatmap_regimes.png" alt="Heatmap of MRE DEL across the nine regimes"></a></figure>
+          <p class="how">MRE DEL of the top-10 Global surrogates per tower (REF, OPT1, OPT2 top to bottom). Columns group wave regimes; within each group the three sub-columns are wind regimes. The rightmost EX_EX column is the worst-case extrapolation regime.</p>
         </div>
       </div>
       <div class="column is-half">
         <div class="box">
-          <p class="title is-5">Cross tower (E3): transfer collapses on geometries far from training</p>
-          <p>Training on a set that includes the reference tower generalizes to the redesigned towers: rank-1 Rel L² DEL is 0.067 (REF+OPT1 → OPT2) and 0.098 (REF+OPT2 → OPT1). Training without it (OPT1+OPT2 → REF) reaches 0.423, a 4 to 6× increase.</p>
-          <figure class="image" style="margin-top:1rem;"><img src="figures/cross_tower.png" alt="Rank-1 Rel L2 DEL per cross-tower fold"></figure>
-          <p class="how">Each bar trains on two towers and tests on the third (colour of the held-out tower); the best model of each fold is named below its bar.</p>
+          <p class="title is-6">Wind drives the extrapolation error (E2)</p>
+          <figure class="image"><a href="figures/app_family_regime.png"><img src="figures/app_family_regime.png" alt="Family-aggregated error by wind and wave regime"></a></figure>
+          <p class="how">Family-aggregated MRE DEL by regime (rows: REF, OPT1, OPT2; left: wind regime; right: wave regime). The wind axis drives most of the extrapolation error; the wave axis is comparatively flat.</p>
         </div>
       </div>
+      <div class="column is-half">
+        <div class="box">
+          <p class="title is-6">Global vs EX_EX error per model (E2)</p>
+          <figure class="image"><a href="figures/app_scatter_global_exex.png"><img src="figures/app_scatter_global_exex.png" alt="Scatter of Global vs EX_EX error per model"></a></figure>
+          <p class="how">Per-model MRE DEL, Global (y) vs EX_EX (x), log axes; NeuralNet navy, ensembles red, other families grey. Points below the diagonal have higher EX_EX error; NeuralNet variants stay closest to it, TabM departs farthest.</p>
+        </div>
+      </div>
+      <div class="column is-half">
+        <div class="box">
+          <p class="title is-6">Predicted vs true damage across towers (E3)</p>
+          <figure class="image"><a href="figures/app_scatter_e3.png"><img src="figures/app_scatter_e3.png" alt="Predicted vs true damage scatter for E3"></a></figure>
+          <p class="how">Top-3 Global surrogates per cross-tower fold (rows: folds), log–log axes. The bottom fold (OPT1+OPT2 → REF) under-predicts the held-out tower; the top two folds stay close to the diagonal.</p>
+        </div>
+      </div>
+      <div class="column is-half">
+        <div class="box">
+          <p class="title is-6">Stability of the regime labels</p>
+          <figure class="image"><a href="figures/app_split_sensitivity.png"><img src="figures/app_split_sensitivity.png" alt="Sensitivity of regime labels to partition parameters"></a></figure>
+          <p class="how">Agreement with the released split and Jaccard index of the EX_EX set as each partition parameter is perturbed around its value (dashed line). Labels are stable for α in [0.05, 0.3]: agreement ≥ 97.9% and EX_EX Jaccard ≥ 0.90.</p>
+        </div>
+      </div>
+      <div class="column is-half">
+        <div class="box">
+          <p class="title is-6">Spacing of the training grid</p>
+          <div class="columns is-mobile is-gapless">
+            <div class="column"><figure class="image"><a href="figures/app_spacing_wind.png"><img src="figures/app_spacing_wind.png" alt="Nearest-neighbour spacing, wind subspace"></a></figure></div>
+            <div class="column"><figure class="image"><a href="figures/app_spacing_wave.png"><img src="figures/app_spacing_wave.png" alt="Nearest-neighbour spacing, wave subspace"></a></figure></div>
+          </div>
+          <p class="how">Nearest-neighbour distances between training points in standardised units, in the wind (left) and wave (right) subspaces. Their mean sets the spacing scale of the In-train threshold.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SCOPE ============ -->
+<section class="section has-background-light">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Scope and Future Work</h2>
+    <div class="content has-text-justified">
+      <p><strong>Three geometries, one design family.</strong> The towers are the IEA-22 baseline and two fatigue-aware redesigns of it: the setting of design iteration, where a surrogate must follow the design as it changes. They are not near-duplicates: the first fore-aft frequency of REF lies close to the 3P excitation while the redesigns sit above it, and the base damage changes by a factor of about 40. E3 tests within-family transfer; cross-family generalisation (NREL 5 MW, DTU 10 MW, IEA-15) is left to future releases. The regime partition depends only on the wind/wave grid, so it carries over to other families.</p>
+      <p><strong>Load case.</strong> The first release covers aligned wind–wave power production (DLC 1.2), the standard fatigue design load case of IEC 61400-3-2, which typically dominates lifetime tower fatigue. Misaligned, parked and idling cases involve different physics and new simulation campaigns.</p>
+      <p><strong>Future work.</strong> Further tabular foundation models (TabICL, TabDPT), a time-series task on the ≈190 GB OpenFAST record (a 147-simulation audit subset is already released), other load cases and design families, and FEA/CFD meshes for multi-fidelity benchmarks.</p>
     </div>
   </div>
 </section>

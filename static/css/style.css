@@ -93,7 +93,7 @@ table.data th, table.data td { text-align: right !important; white-space: nowrap
 table.data th.l, table.data td.l { text-align: left !important; }
 table.data td.mono { font-family: monospace; }
 .table-container { max-height: 560px; overflow: auto; }
-.lb-table-wrap { max-height: 680px; }
+.lb-table-wrap { max-height: 520px; }
 table.lb tbody tr { cursor: pointer; }
 table.lb tbody tr.sel { background: #e8eef5; }
 .fam-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
@@ -145,3 +145,9 @@ table.schema { font-size: 0.85rem; }
 table.schema td { vertical-align: top; }
 table.schema td.grp { font-weight: 600; color: var(--navy); white-space: nowrap; }
 table.schema th.num, table.schema td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- results ---------- */
+.result-block { margin-bottom: 3rem; }
+.result-tag { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #c05621; margin-bottom: 0.3rem; }
+.takeaway { border-left: 3px solid #294366; padding: 0.5rem 0.9rem; background: #f5f7fa; font-style: italic; color: #2d3748; }
+table.results td, table.results th { white-space: nowrap; }

@@ -22,6 +22,7 @@ substituted, relative paths resolve against `--repo_root`), as written by
 import argparse
 import base64
 import json
+import os
 import pathlib
 
 import numpy as np
@@ -104,7 +105,18 @@ def tower_payload(frame, sims, n_sections):
     }
 
 
-def leaderboard(root, bench_dir):
+def model_size(model_dir):
+    """Bytes of one trained model on disk, without stored test predictions."""
+    total = 0
+    for base, dirs, files in os.walk(model_dir):
+        dirs[:] = [
+            d for d in dirs if d != "test" and not d.startswith("cross_test")
+        ]
+        total += sum(os.path.getsize(os.path.join(base, f)) for f in files)
+    return total
+
+
+def leaderboard(root, bench_dir, models_dir):
     """E2 model pool of each tower: Rel L2 DEL globally and per regime."""
     out = {}
     for tower in TOWERS:
@@ -125,6 +137,10 @@ def leaderboard(root, bench_dir):
         merged = merged.merge(met[key + ["r2_del", "r2_damage"]], on=key)
         rows = []
         for _, row in merged.iterrows():
+            mdir = pathlib.Path(
+                models_dir.format(tower=tower, preset=row.preset)) / row.Model
+            if not mdir.is_absolute():
+                mdir = root / mdir
             rows.append({
                 "model": row.Model,
                 "preset": row.preset,
@@ -133,6 +149,9 @@ def leaderboard(root, bench_dir):
                 "r2_damage": round(float(row.r2_damage), 5),
                 "latency_ms": round(float(row["Mean Latency (ms)"]), 4),
                 "train_s": round(float(row["Training Time (s)"]), 1),
+                "size_mb":
+                    (round(model_size(mdir) / 1e6, 3) if mdir.is_dir() else None
+                    ),
                 "sec1": round(float(row["Rel_L2 section_1"]), 5),
                 "sec30": round(float(row["Rel_L2 section_30"]), 5),
                 "rel_l2": {
@@ -148,13 +167,19 @@ def main():
     parser = argparse.ArgumentParser(
         description=__doc__.split("\n", maxsplit=1)[0])
     parser.add_argument("--repo_root", default="../FLOATBench")
+    parser.add_argument(
+        "--models_dir",
+        default="outputs/within/{tower}/{preset}/model/models",
+        help="Trained AutoGluon models ('{tower}' and '{preset}' are "
+        "substituted); used for the on-disk model size.")
     parser.add_argument("--bench_dir",
                         default="outputs/within/{tower}/benchmark")
     args = parser.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     root = pathlib.Path(args.repo_root).resolve()
     for name, payload in (("dataset", dataset(root)),
-                          ("leaderboard", leaderboard(root, args.bench_dir))):
+                          ("leaderboard",
+                           leaderboard(root, args.bench_dir, args.models_dir))):
         path = OUT / f"{name}.json"
         path.write_text(json.dumps(payload, separators=(",", ":")))
         print(f"wrote {path} ({path.stat().st_size / 1e6:.2f} MB)")

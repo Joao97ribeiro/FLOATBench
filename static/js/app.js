@@ -281,8 +281,8 @@ function coords(view, i) {
 function hoverText(i, tower, section) {
   const s = state.data.sims;
   const d = Math.pow(10, logDamage(tower, i, section));
-  return `sim ${s.sim_id[i]} · seed ${s.seed[i]}<br>U = ${s.ws[i]} m/s (mean ${s.mean_ws[i].toFixed(2)}, std ${s.std_ws[i].toFixed(2)})`
-    + `<br>Hs = ${s.hs[i].toFixed(2)} m, Tp = ${s.tp[i].toFixed(2)} s`
+  return `sim ${s.sim_id[i]} · turbulence seed ${s.seed[i]}<br>wind speed ${s.ws[i]} m/s (realised mean ${s.mean_ws[i].toFixed(2)}, std ${s.std_ws[i].toFixed(2)})`
+    + `<br>wave height Hs ${s.hs[i].toFixed(2)} m, wave period Tp ${s.tp[i].toFixed(2)} s`
     + `<br>wind ${GROUP_NAME[s.wind[i]]}, wave ${GROUP_NAME[s.wave[i]]}${s.train[i] ? " (train)" : ""}`
     + `<br>damage @ section ${section}: ${fmtSci(d)}`;
 }
@@ -364,9 +364,9 @@ function drawEnvelope() {
   }
 
   const titles = {
-    wind: ["Mean wind speed [m/s]", "Std of wind speed [m/s]"],
-    wave: ["Peak period Tp [s]", "Significant wave height Hs [m]"],
-    "3d": ["Mean wind speed [m/s]", "Tp [s]", "Hs [m]"],
+    wind: ["Mean wind speed [m/s]", "Wind turbulence: std of wind speed [m/s]"],
+    wave: ["Wave peak period Tp [s]", "Significant wave height Hs [m]"],
+    "3d": ["Wind speed [m/s]", "Wave period Tp [s]", "Wave height Hs [m]"],
   }[view];
   let layout;
   if (is3d) {
@@ -408,42 +408,61 @@ function drawProfile() {
   const i = state.sel;
   const section = Number(document.getElementById("ex-sec").value);
   const n = state.data.n_sections;
+  const life = state.profileMode === "life";
   const traces = TOWERS.map((tw) => {
     const h = state.data.towers[tw].height;
-    const d = [];
-    for (let k = 1; k <= n; k++) d.push(Math.pow(10, logDamage(tw, i, k)));
+    let d;
+    if (life) {
+      d = state.data.towers[tw].lifetime;
+    } else {
+      d = [];
+      for (let k = 1; k <= n; k++) d.push(Math.pow(10, logDamage(tw, i, k)));
+    }
     return {
       x: d, y: h, mode: "lines+markers", name: TOWER_LABEL[tw],
       line: { color: t.tower[tw], width: 2.2 },
       marker: { size: 4 },
-      hovertemplate: `${TOWER_LABEL[tw]}<br>%{y:.1f} m: %{x:.3e}<extra></extra>`,
+      hovertemplate: life
+        ? `${TOWER_LABEL[tw]}<br>%{y:.1f} m: D = %{x:.3f}<extra></extra>`
+        : `${TOWER_LABEL[tw]}<br>%{y:.1f} m: %{x:.3e}<extra></extra>`,
     };
   });
   const hSel = state.data.towers.ref.height[section - 1];
+  const shapes = [{
+    type: "line", xref: "paper", x0: 0, x1: 1, y0: hSel, y1: hSel,
+    line: { color: t.ink3, width: 1, dash: "dot" },
+  }];
+  const annotations = [];
+  if (life) {
+    shapes.push({ type: "line", yref: "paper", x0: 1, x1: 1, y0: 0, y1: 1, line: { color: t.ex, width: 1.2, dash: "dash" } });
+    annotations.push({ x: 0, xref: "x", y: 1, yref: "paper", text: "D = 1 (fatigue limit)", showarrow: false, xanchor: "left", yanchor: "bottom", font: { color: t.ex, size: 11 } });
+  }
   const layout = baseLayout(t, {
-    title: { text: `Simulation ${state.data.sims.sim_id[i]}: damage along the tower`, font: { size: 13, color: t.ink }, x: 0.02, xanchor: "left" },
-    xaxis: axis(t, "600 s fatigue damage [-] (log)", { type: "log", exponentformat: "power" }),
+    title: {
+      text: life ? "Lifetime (25-year) damage along the tower"
+        : `Simulation ${state.data.sims.sim_id[i]}: damage along the tower`,
+      font: { size: 13, color: t.ink }, x: 0.02, xanchor: "left",
+    },
+    xaxis: axis(t, life ? "25-year fatigue damage D [-] (log)" : "600 s fatigue damage [-] (log)", { type: "log", exponentformat: "power" }),
     yaxis: axis(t, "Section height [m]"),
     showlegend: true,
     legend: { orientation: "h", x: 0, y: -0.2, font: { color: t.ink2 } },
     margin: { l: 58, r: 16, t: 36, b: 78 },
-    shapes: [{
-      type: "line", xref: "paper", x0: 0, x1: 1, y0: hSel, y1: hSel,
-      line: { color: t.ink3, width: 1, dash: "dot" },
-    }],
+    shapes, annotations,
   });
   render("plot-profile", traces, layout);
+  document.getElementById("sim-details").hidden = life;
 
   const s = state.data.sims;
   const cells = [
     ["sim_id", s.sim_id[i]],
-    ["seed", s.seed[i]],
-    ["U [m/s]", s.ws[i]],
+    ["turbulence seed", s.seed[i]],
+    ["wind speed [m/s]", s.ws[i]],
     ["split", s.train[i] ? "train" : "test"],
-    ["Hs [m]", s.hs[i].toFixed(2)],
-    ["Tp [s]", s.tp[i].toFixed(2)],
-    ["wind", GROUP_NAME[s.wind[i]]],
-    ["wave", GROUP_NAME[s.wave[i]]],
+    ["wave height Hs [m]", s.hs[i].toFixed(2)],
+    ["wave period Tp [s]", s.tp[i].toFixed(2)],
+    ["wind regime", GROUP_NAME[s.wind[i]]],
+    ["wave regime", GROUP_NAME[s.wave[i]]],
   ];
   document.getElementById("sim-card").innerHTML = cells
     .map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("");
@@ -452,6 +471,7 @@ function drawProfile() {
 
 function selectSim(i) {
   state.sel = i;
+  if (state.profileMode === "life") document.querySelector('#profile-mode button[data-mode="sim"]').click();
   drawEnvelope();
   drawProfile();
   document.getElementById("sim-hf-status").innerHTML = "";
@@ -486,6 +506,15 @@ function initExplorer() {
     drawEnvelope(); drawProfile();
   });
   document.getElementById("sim-hf").addEventListener("click", loadSimFromHF);
+  document.querySelectorAll("#profile-mode button").forEach((btn) => btn.addEventListener("click", () => {
+    state.profileMode = btn.dataset.mode;
+    document.querySelectorAll("#profile-mode button").forEach((b) => {
+      const on = b === btn;
+      b.classList.toggle("is-dark", on);
+      b.classList.toggle("is-selected", on);
+    });
+    drawProfile();
+  }));
   updateSectionLabel();
   drawEnvelope();
   drawProfile();
@@ -640,7 +669,7 @@ function drawLeaderboard() {
   const regimeLabel = regime === "Global" ? "Global" : regime;
   const head = `<thead><tr><th>#</th><th class="l">Model</th><th class="l">Preset</th><th>Rel L² ${regimeLabel}</th>`
     + (regime === "Global" ? "" : `<th>Global #</th><th>Shift</th>`)
-    + `<th>R² DEL</th></tr></thead>`;
+    + `<th>R² DEL</th><th>Train [min]</th><th>Latency [µs/row]</th><th>Size [MB]</th></tr></thead>`;
   const body = shown.map((r) => {
     const g = gRank.get(r), k = rRank.get(r), d = g - k;
     const shift = d > 0 ? `<span class="up">▲ ${d}</span>` : d < 0 ? `<span class="down">▼ ${-d}</span>` : "·";
@@ -650,14 +679,84 @@ function drawLeaderboard() {
       + `<td class="l">${r.preset}</td>`
       + `<td><b>${r.rel_l2[regime].toFixed(4)}</b></td>`
       + (regime === "Global" ? "" : `<td>${g}</td><td>${shift}</td>`)
-      + `<td>${r.r2_del.toFixed(4)}</td></tr>`;
+      + `<td>${r.r2_del.toFixed(4)}</td><td>${(r.train_s / 60).toFixed(1)}</td>`
+      + `<td>${(r.latency_ms * 1000).toFixed(1)}</td><td>${fmtSize(r.size_mb)}</td></tr>`;
   }).join("");
   const table = document.getElementById("lb-table");
-  table.innerHTML = head + `<tbody>${body || `<tr><td colspan="7" class="l muted">No model matches the filters.</td></tr>`}</tbody>`;
+  table.innerHTML = head + `<tbody>${body || `<tr><td colspan="10" class="l muted">No model matches the filters.</td></tr>`}</tbody>`;
   table.querySelectorAll("tbody tr[data-key]").forEach((tr) =>
     tr.addEventListener("click", () => { state.lbSel = tr.dataset.key; drawLeaderboard(); }));
   drawCrossover();
   drawHeat();
+  drawEfficiency();
+}
+
+function fmtSize(mb) {
+  if (mb === null || mb === undefined) return "";
+  return mb < 1 ? mb.toFixed(2) : mb < 100 ? mb.toFixed(1) : Math.round(mb).toLocaleString();
+}
+
+const EFF_AXIS = {
+  train_s: { title: "Training time [s] (log)", fmt: (v) => `${(v / 60).toFixed(1)} min` },
+  latency_ms: { title: "Inference latency [ms per row] (log)", fmt: (v) => `${(v * 1000).toFixed(1)} µs/row` },
+  size_mb: { title: "Model size on disk [MB] (log)", fmt: (v) => `${fmtSize(v)} MB` },
+};
+
+function drawEfficiency() {
+  const t = theme();
+  const { tower, regime, rows } = lbRows();
+  const key = document.getElementById("eff-x").value;
+  const ax = EFF_AXIS[key];
+  const valid = rows.filter((r) => r[key] > 0 && state.families.has(r.family));
+  const traces = [];
+  for (const fam of FAMILIES) {
+    const rs = valid.filter((r) => r.family === fam);
+    if (!rs.length) continue;
+    traces.push({
+      type: "scatter", mode: "markers", name: fam,
+      x: rs.map((r) => r[key]), y: rs.map((r) => r.rel_l2[regime]),
+      customdata: rs.map(modelKey),
+      text: rs.map((r) => `${shortName(r.model)} (${r.preset})<br>${regime} Rel L² ${r.rel_l2[regime].toFixed(4)}<br>${ax.fmt(r[key])}`),
+      hovertemplate: "%{text}<extra></extra>",
+      marker: { size: 8, color: t.family[fam], opacity: 0.85, line: { width: 0 } },
+    });
+  }
+  // Pareto front: sweep by cost, keep each new minimum error.
+  const sorted = valid.slice().sort((a, b) => a[key] - b[key]);
+  const front = [];
+  let best = Infinity;
+  for (const r of sorted) {
+    if (r.rel_l2[regime] < best) { best = r.rel_l2[regime]; front.push(r); }
+  }
+  traces.unshift({
+    type: "scatter", mode: "lines", hoverinfo: "skip", showlegend: false,
+    x: front.map((r) => r[key]), y: front.map((r) => r.rel_l2[regime]),
+    line: { color: t.ink3, width: 1.2, dash: "dash", shape: "hv" },
+  });
+  const sel = rows.find((r) => modelKey(r) === state.lbSel);
+  if (sel && sel[key] > 0) {
+    traces.push({
+      type: "scatter", mode: "markers", hoverinfo: "skip", showlegend: false,
+      x: [sel[key]], y: [sel.rel_l2[regime]],
+      marker: { size: 16, color: "rgba(0,0,0,0)", line: { color: t.ink, width: 2 } },
+    });
+  }
+  render("plot-efficiency", traces, baseLayout(t, {
+    title: { text: `${TOWER_LABEL[tower]}: ${regime} error vs cost`, font: { size: 13, color: t.ink }, x: 0.02, xanchor: "left" },
+    xaxis: axis(t, ax.title, { type: "log", exponentformat: "power" }),
+    yaxis: axis(t, `Rel L² DEL, ${regime}`),
+    showlegend: true,
+    legend: { orientation: "h", x: 0, y: -0.2, font: { color: t.ink2, size: 11 } },
+    margin: { l: 60, r: 16, t: 36, b: 90 },
+  }));
+  const el = document.getElementById("plot-efficiency");
+  if (!el._clickBound) {
+    el.on("plotly_click", (ev) => {
+      const p = ev.points && ev.points[0];
+      if (p && p.customdata) { state.lbSel = p.customdata; drawLeaderboard(); }
+    });
+    el._clickBound = true;
+  }
 }
 
 function drawCrossover() {
@@ -741,6 +840,7 @@ function initLeaderboard() {
     c.setAttribute("aria-pressed", state.families.has(f));
     drawLeaderboard();
   }));
+  document.getElementById("eff-x").addEventListener("change", drawEfficiency);
   ["lb-tower", "lb-regime", "lb-n"].forEach((id) =>
     document.getElementById(id).addEventListener("change", drawLeaderboard));
   document.getElementById("lb-search").addEventListener("input", drawLeaderboard);

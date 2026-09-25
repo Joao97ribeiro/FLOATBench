@@ -1,0 +1,9 @@
+# Extra dependencies of the paper analyses in analyses/ (on top of
+# requirements.txt). Versions of the environment used for the paper.
+
+-r requirements.txt
+
+tabpfn==6.2.0        # analyses/baselines/fit_stronger.py (GPU recommended)
+rainflow==3.2.0      # analyses/audit/run_audit.py
+ruamel.yaml==0.19.1  # analyses/audit/run_audit.py
+tqdm==4.67.1         # analyses/audit/run_audit.py

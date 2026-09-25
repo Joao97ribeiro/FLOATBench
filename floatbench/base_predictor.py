@@ -115,6 +115,8 @@ class BaseDamagePredictor(ABC):
         n_bootstrap: int = 2000,
         seed: int = 42,
         alpha: float = 0.05,
+        groups: np.ndarray = None,
+        cluster: str = "condition",
     ) -> dict:
         """Compute pointwise errors and aggregate metrics.
 
@@ -129,6 +131,10 @@ class BaseDamagePredictor(ABC):
             seed: RNG seed for reproducible bootstrap sampling.
             alpha: Significance level; CI is (1 - alpha). Default 0.05
               gives a 95% CI using the 2.5 / 97.5 percentiles.
+            groups: Cluster label per row for the bootstrap (operating
+              condition, see ``floatbench.utils.condition_id``).
+            cluster: Bootstrap resampling unit, ``"condition"`` (paper
+              default; needs ``groups``) or ``"row"`` (i.i.d. rows).
 
         Returns:
             Dict with:
@@ -197,7 +203,9 @@ class BaseDamagePredictor(ABC):
                                              y_pred,
                                              n_bootstrap=n_bootstrap,
                                              alpha=alpha,
-                                             seed=seed))
+                                             seed=seed,
+                                             groups=groups,
+                                             cluster=cluster))
 
         return result
 

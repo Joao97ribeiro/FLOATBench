@@ -1,25 +1,43 @@
+# pylint: disable=too-many-lines
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-branches
 # pylint: disable=too-many-locals
 # pylint: disable=too-many-positional-arguments
 """Bootstrap CIs for regression metrics and paper-style leaderboards.
 
-Exports two pieces that work together:
+Exports the pieces that work together:
 
-- :func:`bootstrap_regression_metrics` — nonparametric percentile-
-  method bootstrap CIs + mean + std for 8 regression metrics
-  (Algorithm 1 of CarBench, Elrefaie et al., 2025, arXiv:2512.07847).
-- :func:`format_paper_table` / :func:`format_paper_tables` — consume
+- :func:`bootstrap_regression_metrics`: nonparametric percentile-method
+  bootstrap CIs + mean + std for 8 regression metrics. The resampling
+  unit is configurable: whole operating conditions (``cluster=
+  "condition"``, the paper default) or individual rows (``cluster=
+  "row"``, the original i.i.d. scheme, kept for backwards
+  compatibility and comparison).
+- :func:`condition_id`: maps FLOATBench ``sim_id`` values to their
+  operating condition (wind level, Hs, Tp), the resampling cluster.
+- :func:`paired_bootstrap_difference`: paired interval for the metric
+  difference of two models scored on the same condition resamples
+  (rank-1 vs rank-2 test of the paper).
+- :func:`format_paper_table` / :func:`format_paper_tables`: consume
   the bootstrap ``_boot_mean`` / ``_boot_std`` columns written into
-  ``leaderboard_test_metrics.csv`` and emit a CarBench Table 1-style
-  ranked CSV (``mean ± std``, ISO GUM rounding).
+  ``leaderboard_test_metrics.csv`` and emit a ranked CSV
+  (``mean ± std``, ISO GUM rounding).
 
-Given a test set D_test = {(y_i, y_pred_i)}_{i=1}^N and a set of
-metrics {f_m}, the bootstrap implementation follows:
+Why whole conditions. The 30 tower sections and 6 turbulence seeds of
+one wind/wave operating condition share its met-ocean state, so the
+test rows are not independent. Row-level resampling ignores this
+dependence and underestimates the standard deviation of Rel L2 DEL by
+a median 4.8x (E1), 8.3x (E2) and 4.2x (E3). The benchmark therefore
+resamples whole conditions.
+
+Given N test pairs {(y_i, y_pred_i)} with condition labels k_i in
+{1, ..., K} and a set of metrics {f_m}, the algorithm is:
 
     1. Initialize Theta_m = [] for each metric m
     2. for b = 1 to B:
-    3.     Sample N indices with replacement: I^(b) ~ {0, ..., N-1}
+    3.     Sample K conditions with replacement, c^(b) ~ U{1..K}^K;
+           I^(b) = all rows of the conditions in c^(b)
+           (row mode: sample N row indices with replacement)
     4.     Compute every metric on the resample in one pass:
            theta_m^(b) = f_m({(y_i, y_pred_i) : i in I^(b)})
     5.     Append each theta_m^(b) to its Theta_m
@@ -32,22 +50,15 @@ metrics {f_m}, the bootstrap implementation follows:
                                 Theta_m, [alpha/2, 1-alpha/2])
     11. return {theta_bar_m, sigma_boot_m, CI_{1-alpha, m}} for all m
 
-Notes on how this relates to Algorithm 1 / eq. (1) of CarBench
-(Elrefaie et al., 2025, arXiv:2512.07847):
+Implementation notes:
 
-- Step 10 uses ``numpy.percentile`` with linear interpolation between
-  adjacent order statistics instead of the integer indexing
-  ``Theta[alpha/2 * B]`` shown in the paper's pseudocode. Linear
-  interpolation is the statistical default (scipy, R type 7,
-  statsmodels) and gives a lower-bias/lower-variance estimate of the
-  quantile for continuous metric distributions; an explicit
-  ``np.sort`` is therefore not needed. At B = 2000 the two methods
-  differ by < 0.1% of the CI width.
-- Step 9 uses ``ddof=1`` to match equation (1) of the paper (divide
-  by B - 1, not B).
-- The paper's Algorithm 1 handles a single metric; we fold the loop
-  over metrics into the same bootstrap pass (step 4) to reuse the
-  residual / abs-error / norm intermediates.
+- The RNG draws depend only on (seed, K, B), so every model scored on
+  the same test set with the same seed sees the same resamples. This
+  is what makes the paired rank-1 vs rank-2 difference valid.
+- Step 10 uses ``numpy.percentile`` with linear interpolation (R type
+  7), the statistical default; step 9 uses ``ddof=1``.
+- All metrics share one bootstrap pass (step 4) to reuse the residual
+  / abs-error / norm intermediates.
 """
 
 from __future__ import annotations
@@ -55,12 +66,20 @@ from __future__ import annotations
 import math
 import os
 from pathlib import Path
-from typing import Dict, Iterable
+from typing import Dict, Iterable, Optional
 
 import numpy as np
 import pandas as pd
 from absl import logging
 from sklearn.metrics import r2_score
+
+# FLOATBench grid: 22 wind levels x 49 wave states (7 Hs x 7 Tp) x 6
+# turbulence seeds = 6,468 simulations per tower. ``sim_id`` runs from 1
+# to 6,468 with the wind level slowest, then the 6 seeds, then the 49
+# wave states: 294 = 49 x 6 simulations per wind level.
+SIMS_PER_WIND_LEVEL = 294
+WAVE_STATES = 49
+CLUSTER_MODES = ("condition", "row")
 
 # Metric columns: cell = "mean ± std" (mean -> <key>_boot_mean_<target>,
 # std -> <key>_boot_std_<target> in the extended leaderboard).
@@ -88,10 +107,9 @@ DEFAULT_CAPACITY_COLS: Dict[str, str] = {
     "Training Time (s)": "fit_time",
 }
 
-# Percentile columns for the error distribution table (CarBench T4
-# analogue). Median Rel. Error is the percentile of the relative
-# error (dimensionless, %); the rest are percentiles of the absolute
-# error in target units.
+# Percentile columns for the error distribution table. Median Rel. Error
+# is the percentile of the relative error (dimensionless, %); the rest
+# are percentiles of the absolute error in target units.
 DEFAULT_PERCENTILE_COLS: Dict[str, str] = {
     "p50_rel": "Median Rel. Error (%)",
     "p50_abs": "P50 Abs Error",
@@ -100,6 +118,130 @@ DEFAULT_PERCENTILE_COLS: Dict[str, str] = {
     "p99_abs": "P99 Abs Error",
 }
 
+BOOT_METRICS = ("r2", "mse", "mae", "mre", "rmse", "bias", "rel_l2", "max_err")
+
+
+def condition_id(sim_id: Iterable) -> np.ndarray:
+    """Maps FLOATBench ``sim_id`` values to operating-condition ids.
+
+    A condition is one (wind level, Hs, Tp) triple; its 6 turbulence
+    seeds and 30 sections are resampled together. With 1-based
+    ``sim_id`` ordered wind level -> seed -> wave state,
+
+        condition = (sim_id - 1) // 294 * 49 + (sim_id - 1) % 49,
+
+    which gives 1,078 = 22 x 49 conditions per tower (verified against
+    the ``wind_speed`` / ``wave_hs`` / ``wave_tp`` columns: each
+    condition id maps to exactly one triple).
+
+    Args:
+        sim_id: Array-like of 1-based simulation ids (int or str).
+
+    Returns:
+        Integer array of condition ids, same shape as ``sim_id``.
+    """
+    s = np.asarray(sim_id).astype(np.int64) - 1
+    return s // SIMS_PER_WIND_LEVEL * WAVE_STATES + s % WAVE_STATES
+
+
+def _cluster_index(groups: np.ndarray):
+    """Rows sorted by cluster, plus per-cluster start offset and size."""
+    _, inv = np.unique(groups, return_inverse=True)
+    inv = inv.ravel()
+    order = np.argsort(inv, kind="stable")
+    counts = np.bincount(inv)
+    starts = np.concatenate(([0], np.cumsum(counts)[:-1]))
+    return order, starts, counts
+
+
+def _expand_clusters(order: np.ndarray, starts: np.ndarray, counts: np.ndarray,
+                     drawn: np.ndarray) -> np.ndarray:
+    """Row indices of all rows of the drawn clusters (with repeats)."""
+    n_rows = counts[drawn]
+    offsets = np.repeat(starts[drawn] - np.cumsum(n_rows) + n_rows, n_rows)
+    return order[offsets + np.arange(int(n_rows.sum()))]
+
+
+def bootstrap_resample_indices(n_rows: int,
+                               n_bootstrap: int = 2000,
+                               seed: int = 42,
+                               groups: Optional[np.ndarray] = None):
+    """Yields the row-index vector of each bootstrap replicate.
+
+    With ``groups`` (cluster labels, one per row) each replicate draws
+    K clusters with replacement (``rng.integers(0, K, K)``) and keeps
+    all their rows; without it each replicate draws ``n_rows`` rows.
+    The draw sequence depends only on (seed, K or N, B), so different
+    models scored on the same test set share their resamples.
+
+    Args:
+        n_rows: Number of test rows N.
+        n_bootstrap: Number of replicates B.
+        seed: RNG seed.
+        groups: Optional cluster label per row, shape (N,).
+
+    Yields:
+        Integer index arrays into the N rows.
+    """
+    rng = np.random.default_rng(seed)
+    if groups is None:
+        for _ in range(n_bootstrap):
+            yield rng.integers(0, n_rows, n_rows)
+        return
+    order, starts, counts = _cluster_index(np.asarray(groups))
+    k = counts.size
+    for _ in range(n_bootstrap):
+        yield _expand_clusters(order, starts, counts, rng.integers(0, k, k))
+
+
+def _resolve_groups(n_rows: int, groups, cluster: str):
+    """Validates the cluster mode and returns the labels to resample."""
+    if cluster not in CLUSTER_MODES:
+        raise ValueError(f"cluster must be one of {CLUSTER_MODES}, "
+                         f"got {cluster!r}")
+    if cluster == "row":
+        return None
+    if groups is None:
+        logging.warning(
+            "cluster='condition' requested without condition labels; "
+            "falling back to row-level (i.i.d.) resampling. Pass "
+            "groups=condition_id(df['sim_id']) for the paper CIs.")
+        return None
+    groups = np.asarray(groups)
+    if groups.shape[0] != n_rows:
+        raise ValueError("groups must have one label per row")
+    return groups
+
+
+def _metrics_on_resample(yt: np.ndarray, yp: np.ndarray) -> Dict[str, float]:
+    """All 8 bootstrap metrics on one resample (shared intermediates)."""
+    e_b = yp - yt
+    ae_b = np.abs(e_b)
+    mse_b = float((e_b**2).mean())
+    nt_b = float(np.linalg.norm(yt))
+    return {
+        "r2": r2_score(yt, yp),
+        "mse": mse_b,
+        "mae": ae_b.mean(),
+        "mre": (ae_b / np.abs(yt) * 100.0).mean(),
+        "rmse": np.sqrt(mse_b),
+        "bias": e_b.mean(),
+        "rel_l2": (np.linalg.norm(e_b) / nt_b if nt_b > 0 else np.nan),
+        "max_err": ae_b.max(),
+    }
+
+
+def summarize_draws(draws: np.ndarray, alpha: float = 0.05) -> dict:
+    """Bootstrap mean, std (ddof=1) and percentile CI of one metric."""
+    lo, hi = np.percentile(draws,
+                           [100.0 * alpha / 2.0, 100.0 * (1.0 - alpha / 2.0)])
+    return {
+        "boot_mean": float(np.mean(draws)),
+        "boot_std": float(np.std(draws, ddof=1)),
+        "ci_lo": float(lo),
+        "ci_hi": float(hi),
+    }
+
 
 def bootstrap_regression_metrics(
     y_true: np.ndarray,
@@ -107,6 +249,9 @@ def bootstrap_regression_metrics(
     n_bootstrap: int = 2000,
     alpha: float = 0.05,
     seed: int = 42,
+    groups: Optional[np.ndarray] = None,
+    cluster: str = "condition",
+    return_draws: bool = False,
 ) -> dict:
     """Bootstrap CI + mean + std for 8 regression metrics.
 
@@ -120,67 +265,105 @@ def bootstrap_regression_metrics(
         n_bootstrap: Number of bootstrap resamples B.
         alpha: Significance level; CI is (1 - alpha). 0.05 -> 95% CI.
         seed: RNG seed for reproducible resampling.
+        groups: Cluster label per row, shape (N,). For FLOATBench use
+            ``condition_id(df["sim_id"])``. Required for
+            ``cluster="condition"``; if missing, the function warns and
+            falls back to row resampling (backwards-compatible call).
+        cluster: ``"condition"`` (default, paper CIs) resamples whole
+            clusters; ``"row"`` resamples rows i.i.d. (original scheme).
+        return_draws: If True, also return the raw bootstrap draws
+            under the key ``"draws"`` ({metric: array of length B}).
 
     Returns:
         Dict with keys ``<metric>_ci_lo``, ``<metric>_ci_hi``,
         ``<metric>_boot_mean``, ``<metric>_boot_std`` for every
-        metric listed above (32 keys total).
+        metric listed above (32 keys), plus ``"draws"`` if requested.
     """
     y_true = np.asarray(y_true, dtype=float)
     y_pred = np.asarray(y_pred, dtype=float)
-    n = y_true.size
+    groups = _resolve_groups(y_true.size, groups, cluster)
 
-    # Step numbers below refer to the algorithm listed in this
-    # module's docstring.
+    # Step 1: one accumulator array per metric (Theta_m).
+    boot = {k: np.empty(n_bootstrap) for k in BOOT_METRICS}
 
-    # Step 1: initialize one accumulator array per metric (Theta_m).
-    keys = ("r2", "mse", "mae", "mre", "rmse", "bias", "rel_l2", "max_err")
-    boot = {k: np.empty(n_bootstrap) for k in keys}
+    # Steps 2-6: B replicates, all metrics per replicate in one pass.
+    for i, idx in enumerate(
+            bootstrap_resample_indices(y_true.size, n_bootstrap, seed, groups)):
+        for k, v in _metrics_on_resample(y_true[idx], y_pred[idx]).items():
+            boot[k][i] = v
 
-    rng = np.random.default_rng(seed)
-
-    # Steps 2-6: run B bootstrap iterations.
-    for i in range(n_bootstrap):
-        # Step 3: sample N indices with replacement from {0, ..., N-1}.
-        idx = rng.integers(0, n, n)
-        yt = y_true[idx]
-        yp = y_pred[idx]
-
-        # Step 4: compute every metric on this resample in one pass;
-        # shared intermediates (residual, abs/rel error, norm) are reused.
-        e_b = yp - yt
-        ae_b = np.abs(e_b)
-        re_b = ae_b / np.abs(yt) * 100.0
-        mse_b = float((e_b**2).mean())
-        nt_b = float(np.linalg.norm(yt))
-
-        # Step 5: append theta_m^(b) to each metric's accumulator.
-        boot["r2"][i] = r2_score(yt, yp)
-        boot["mse"][i] = mse_b
-        boot["mae"][i] = ae_b.mean()
-        boot["mre"][i] = re_b.mean()
-        boot["rmse"][i] = np.sqrt(mse_b)
-        boot["bias"][i] = e_b.mean()
-        boot["rel_l2"][i] = (np.linalg.norm(e_b) / nt_b if nt_b > 0 else np.nan)
-        boot["max_err"][i] = ae_b.max()
-
-    # Step 10 bounds: percentile-method CI via linear-interpolation
-    # quantiles (np.percentile sorts internally).
-    lo_pct = 100.0 * alpha / 2.0
-    hi_pct = 100.0 * (1.0 - alpha / 2.0)
-
+    # Steps 7-11.
     result: dict = {}
-    for k in keys:
-        # Step 8: theta_bar_m.
-        result[f"{k}_boot_mean"] = float(np.mean(boot[k]))
-        # Step 9: sigma_boot_m (eq. (1): ddof=1 -> 1/(B-1)).
-        result[f"{k}_boot_std"] = float(np.std(boot[k], ddof=1))
-        # Step 10: CI_{1-alpha, m}.
-        lo, hi = np.percentile(boot[k], [lo_pct, hi_pct])
-        result[f"{k}_ci_lo"] = float(lo)
-        result[f"{k}_ci_hi"] = float(hi)
-
+    for k in BOOT_METRICS:
+        for stat, v in summarize_draws(boot[k], alpha).items():
+            result[f"{k}_{stat}"] = v
+    if return_draws:
+        result["draws"] = boot
     return result
+
+
+def paired_bootstrap_difference(
+    y_true: np.ndarray,
+    y_pred_a: np.ndarray,
+    y_pred_b: np.ndarray,
+    groups: Optional[np.ndarray] = None,
+    metric: str = "rel_l2",
+    n_bootstrap: int = 2000,
+    alpha: float = 0.05,
+    seed: int = 42,
+    cluster: str = "condition",
+) -> dict:
+    """Paired bootstrap interval of ``metric(b) - metric(a)``.
+
+    Both models are scored on the same resamples, so the interval of
+    the difference is much tighter than the overlap of the two marginal
+    intervals. With ``a`` = rank 1 and ``b`` = rank 2 of an error
+    metric (lower is better, e.g. Rel L2 DEL), an interval entirely
+    above zero means rank 1 is significantly better.
+
+    Args:
+        y_true: Ground truth, shape (N,).
+        y_pred_a: Predictions of model a (e.g. rank 1).
+        y_pred_b: Predictions of model b (e.g. rank 2).
+        groups: Cluster label per row (see
+            :func:`bootstrap_regression_metrics`).
+        metric: One of the bootstrapped metric names.
+        n_bootstrap: Number of resamples B.
+        alpha: Significance level.
+        seed: RNG seed.
+        cluster: ``"condition"`` or ``"row"``.
+
+    Returns:
+        Dict with ``diff_point``, ``diff_boot_mean``, ``diff_boot_std``,
+        ``diff_ci_lo``, ``diff_ci_hi`` and ``verdict`` (``"a better"``,
+        ``"b better"`` or ``"tied"`` for lower-is-better metrics).
+    """
+    if metric not in BOOT_METRICS:
+        raise ValueError(f"unknown metric {metric!r}")
+    y_true = np.asarray(y_true, dtype=float)
+    y_pred_a = np.asarray(y_pred_a, dtype=float)
+    y_pred_b = np.asarray(y_pred_b, dtype=float)
+    groups = _resolve_groups(y_true.size, groups, cluster)
+    diff = np.empty(n_bootstrap)
+    for i, idx in enumerate(
+            bootstrap_resample_indices(y_true.size, n_bootstrap, seed, groups)):
+        yt = y_true[idx]
+        diff[i] = (_metrics_on_resample(yt, y_pred_b[idx])[metric] -
+                   _metrics_on_resample(yt, y_pred_a[idx])[metric])
+    point = (_metrics_on_resample(y_true, y_pred_b)[metric] -
+             _metrics_on_resample(y_true, y_pred_a)[metric])
+    out = {"diff_point": float(point)}
+    out.update({
+        f"diff_{k}": v for k, v in summarize_draws(diff, alpha).items()
+    })
+    lower_better = metric != "r2"
+    if out["diff_ci_lo"] > 0:
+        out["verdict"] = "a better" if lower_better else "b better"
+    elif out["diff_ci_hi"] < 0:
+        out["verdict"] = "b better" if lower_better else "a better"
+    else:
+        out["verdict"] = "tied"
+    return out
 
 
 def _format_scientific(value: float, n_sig: int = 3) -> str:
@@ -822,7 +1005,7 @@ def format_percentile_table(
     Content mirrors CarBench Table 4: one row per model with the
     Median Rel. Error plus percentiles of the absolute error (P50,
     P90, P95, P99). Default sort is best-to-worst by Median Rel.
-    Error so rank 1 is the top performer — the usual NeurIPS
+    Error so rank 1 is the top performer, the usual
     leaderboard convention. Pass ``ascending=False`` to replicate
     CarBench's worst-to-best ordering.
 

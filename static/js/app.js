@@ -218,7 +218,7 @@ async function datasetFromHF() {
 }
 
 async function bundledDataset() {
-  const data = await fetch("static/data/dataset.json?v=202609252038").then((r) => r.json());
+  const data = await fetch("static/data/dataset.json?v=202609252040").then((r) => r.json());
   const damage = {};
   TOWERS.forEach((tw) => { damage[tw] = decodeDamage(data.towers[tw].log_damage_i16); });
   return { data, damage };
@@ -697,11 +697,6 @@ function fmtSize(mb) {
   return mb < 1 ? mb.toFixed(2) : mb < 100 ? mb.toFixed(1) : Math.round(mb).toLocaleString();
 }
 
-const EFF_AXIS = {
-  train_s: { title: "Training time [s] (log)", fmt: (v) => fmtTime(v) },
-  latency_ms: { title: "Inference latency [ms per row] (log)", fmt: (v) => `${(v * 1000).toFixed(1)} µs/row` },
-  size_mb: { title: "Model size on disk [MB] (log)", fmt: (v) => `${fmtSize(v)} MB` },
-};
 
 function fmtTime(sec) {
   if (sec < 60) return `${sec.toFixed(1)} s`;
@@ -719,37 +714,56 @@ function paretoFront(rows, key, regime) {
   return front;
 }
 
-function effKey() {
-  const on = document.querySelector("#eff-x button.is-selected");
-  return on ? on.dataset.x : "latency_ms";
-}
+
+// FAMILY_MARKERS of floatbench/plots/benchmark.py, completed for all families.
+const FAMILY_SYMBOL = {
+  CatBoost: "circle", LightGBM: "square", XGBoost: "diamond", NeuralNet: "triangle-up",
+  TabM: "triangle-down", Ensemble: "star", RandomForest: "pentagon", ExtraTrees: "hexagon",
+};
 
 function drawEfficiency() {
   const t = theme();
   const { tower, regime, rows } = lbRows();
-  const key = effKey();
-  const ax = EFF_AXIS[key];
+  const key = "train_s";
   document.querySelectorAll("#eff-regime button").forEach((b) => {
     const on = b.dataset.regime === regime;
     b.classList.toggle("is-dark", on);
     b.classList.toggle("is-selected", on);
   });
-  const valid = rows.filter((r) => r[key] > 0 && state.families.has(r.family));
-  const bubble = (r) => (key === "size_mb" ? 10 : 6 + 4 * Math.log10(1 + Math.max(r.size_mb || 0, 0.01) * 10));
+  const valid = rows.filter((r) => r.train_s > 0 && r.latency_ms > 0 && state.families.has(r.family));
+  const bubble = (r) => 7 + 5 * Math.log10(1 + Math.max(r.size_mb || 0, 0.01) * 10);
+  const latUs = valid.map((r) => Math.log10(r.latency_ms * 1000));
+  const cmin = Math.min(...latUs), cmax = Math.max(...latUs);
   const traces = [];
-  for (const fam of FAMILIES) {
+  FAMILIES.forEach((fam, fi) => {
     const rs = valid.filter((r) => r.family === fam);
-    if (!rs.length) continue;
+    if (!rs.length) return;
     traces.push({
-      type: "scatter", mode: "markers", name: fam,
-      x: rs.map((r) => r[key]), y: rs.map((r) => r.rel_l2[regime]),
+      type: "scatter", mode: "markers", name: fam, legendgroup: fam,
+      x: [null], y: [null], hoverinfo: "skip",
+      marker: { size: 10, symbol: FAMILY_SYMBOL[fam] || "circle", color: t.ip, line: { width: 0.8, color: t.ink3 } },
+    });
+    traces.push({
+      type: "scatter", mode: "markers", name: fam, legendgroup: fam, showlegend: false,
+      x: rs.map((r) => r.train_s), y: rs.map((r) => r.rel_l2[regime]),
       customdata: rs.map(modelKey),
-      text: rs.map((r) => `${shortName(r.model)} (${r.preset})<br>${regime} Rel L² ${r.rel_l2[regime].toFixed(4)}`
+      text: rs.map((r) => `${shortName(r.model)} (${r.preset}) · ${fam}<br>${regime} Rel L² ${r.rel_l2[regime].toFixed(4)}`
         + `<br>train ${fmtTime(r.train_s)} · ${(r.latency_ms * 1000).toFixed(1)} µs/row · ${fmtSize(r.size_mb)} MB`),
       hovertemplate: "%{text}<extra></extra>",
-      marker: { size: rs.map(bubble), color: t.family[fam], opacity: 0.75, line: { width: 0.5, color: "#ffffff" } },
+      marker: {
+        size: rs.map(bubble), symbol: FAMILY_SYMBOL[fam] || "circle",
+        color: rs.map((r) => Math.log10(r.latency_ms * 1000)),
+        cmin, cmax, colorscale: t.damageScale, opacity: 0.85,
+        line: { width: 0.8, color: t.ink3 },
+        showscale: fi === 0,
+        colorbar: fi === 0 ? {
+          title: { text: "Inference<br>µs/row", font: { size: 11, color: t.ink2 } },
+          tickvals: [0, 1, 2, 3], ticktext: ["1", "10", "100", "1000"],
+          tickfont: { size: 10, color: t.ink3 }, thickness: 10, len: 0.75, y: 0.55, outlinewidth: 0,
+        } : undefined,
+      },
     });
-  }
+  });
   const front = paretoFront(valid, key, regime);
   traces.unshift({
     type: "scatter", mode: "lines", hoverinfo: "skip", showlegend: false,
@@ -764,10 +778,9 @@ function drawEfficiency() {
       marker: { size: bubble(sel) + 10, color: "rgba(0,0,0,0)", line: { color: t.ink, width: 2 } },
     });
   }
-  // Label three models: cheapest on the front, most accurate, Global rank-1.
   const globalTop = rows.slice().sort((a, b) => a.rel_l2.Global - b.rel_l2.Global)[0];
   const marks = [
-    [front[0], "cheapest"],
+    [front[0], "fastest to train"],
     [front[front.length - 1], `best ${regime}`],
     [globalTop, "Global rank-1"],
   ].filter(([r], k, arr) => r && r[key] > 0 && arr.findIndex(([q]) => q === r) === k);
@@ -779,11 +792,14 @@ function drawEfficiency() {
     font: { size: 10, color: t.ink }, bgcolor: "rgba(255,255,255,0.9)", align: "left",
   }));
   render("plot-efficiency", traces, baseLayout(t, {
-    xaxis: axis(t, ax.title, { type: "log", exponentformat: "power" }),
+    xaxis: axis(t, "Training time [s] (log)", { type: "log", exponentformat: "power" }),
     yaxis: axis(t, `Rel L² DEL, ${regime} (log)`, { type: "log", exponentformat: "none", tickformat: ".2f" }),
     showlegend: true,
-    legend: { orientation: "v", x: 1.01, y: 1, font: { color: t.ink2, size: 11 } },
-    margin: { l: 64, r: 130, t: 12, b: 56 },
+    legend: {
+      orientation: "h", x: 0, y: -0.16, font: { color: t.ink2, size: 11 },
+      itemsizing: "constant", title: { text: "Family:", font: { size: 11, color: t.ink2 } },
+    },
+    margin: { l: 64, r: 20, t: 12, b: 100 },
     annotations,
   }));
   const el = document.getElementById("plot-efficiency");
@@ -895,14 +911,6 @@ function initLeaderboard() {
     document.getElementById("lb-regime").value = btn.dataset.regime;
     drawLeaderboard();
   }));
-  document.querySelectorAll("#eff-x button").forEach((btn) => btn.addEventListener("click", () => {
-    document.querySelectorAll("#eff-x button").forEach((b) => {
-      const on = b === btn;
-      b.classList.toggle("is-dark", on);
-      b.classList.toggle("is-selected", on);
-    });
-    drawEfficiency();
-  }));
   ["lb-tower", "lb-regime", "lb-n"].forEach((id) =>
     document.getElementById(id).addEventListener("change", drawLeaderboard));
   document.getElementById("lb-search").addEventListener("input", drawLeaderboard);
@@ -984,7 +992,7 @@ async function main() {
   initNav();
   initHF();
   watchTheme();
-  const lbReady = fetch("static/data/leaderboard.json?v=202609252038").then((r) => r.json()).then((lb) => {
+  const lbReady = fetch("static/data/leaderboard.json?v=202609252040").then((r) => r.json()).then((lb) => {
     state.lb = lb;
     initLeaderboard();
   });

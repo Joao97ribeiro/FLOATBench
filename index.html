@@ -11,9 +11,9 @@
   <link rel="icon" type="image/png" href="figures/logo.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="static/css/style.css?v=202609252038">
+  <link rel="stylesheet" href="static/css/style.css?v=202609252040">
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="static/js/app.js?v=202609252038"></script>
+  <script defer src="static/js/app.js?v=202609252040"></script>
 </head>
 <body>
 
@@ -451,18 +451,10 @@ hf download DeCoDELab/FLOATBench \
           <button type="button" class="button is-small is-dark is-selected" data-regime="EX_EX">EX_EX</button>
         </div>
       </div>
-      <div class="eff-group">
-        <span class="eff-label">Cost</span>
-        <div class="buttons has-addons" id="eff-x">
-          <button type="button" class="button is-small is-dark is-selected" data-x="latency_ms">Inference latency</button>
-          <button type="button" class="button is-small" data-x="train_s">Training time</button>
-          <button type="button" class="button is-small" data-x="size_mb">Model size</button>
-        </div>
-      </div>
     </div>
     <p class="eff-insight" id="eff-insight"></p>
     <div id="plot-efficiency" class="plot plot-tall"></div>
-    <p class="how">Lower = more accurate, left = cheaper (log scales); bubble = model size. Dashed line: Pareto front.</p>
+    <p class="how">Lower = more accurate, left = faster to train (log scales). Size = model size on disk, colour = inference latency, shape = family. Dashed line: Pareto front.</p>
   </div>
 </section>
 

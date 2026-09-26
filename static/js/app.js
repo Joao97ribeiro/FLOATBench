@@ -218,7 +218,7 @@ async function datasetFromHF() {
 }
 
 async function bundledDataset() {
-  const data = await fetch("static/data/dataset.json").then((r) => r.json());
+  const data = await fetch("static/data/dataset.json?v=202609252019").then((r) => r.json());
   const damage = {};
   TOWERS.forEach((tw) => { damage[tw] = decodeDamage(data.towers[tw].log_damage_i16); });
   return { data, damage };
@@ -983,7 +983,7 @@ async function main() {
   initNav();
   initHF();
   watchTheme();
-  const lbReady = fetch("static/data/leaderboard.json").then((r) => r.json()).then((lb) => {
+  const lbReady = fetch("static/data/leaderboard.json?v=202609252019").then((r) => r.json()).then((lb) => {
     state.lb = lb;
     initLeaderboard();
   });

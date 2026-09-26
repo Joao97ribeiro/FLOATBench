@@ -41,3 +41,6 @@ python scripts/build_data.py \
 `dataset.json` holds the 6,468 simulations of the envelope and the
 per-section damage of each tower (log10, int16, base64); `leaderboard.json`
 holds the E2 pools with Rel L² DEL globally, per regime and per section.
+
+After changing `static/`, bump the `?v=` stamp in `index.html` and in the
+`fetch()` calls of `static/js/app.js` so browsers do not keep an old copy.

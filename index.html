@@ -11,9 +11,9 @@
   <link rel="icon" type="image/png" href="figures/logo.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="static/css/style.css?v=202609252020">
+  <link rel="stylesheet" href="static/css/style.css?v=202609252038">
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="static/js/app.js?v=202609252020"></script>
+  <script defer src="static/js/app.js?v=202609252038"></script>
 </head>
 <body>
 
@@ -255,7 +255,7 @@
       <div class="column is-7">
         <div id="plot-envelope" class="plot plot-tall"></div>
         <div class="legend-row" id="ex-legend"></div>
-        <p class="how"><strong>How to read.</strong> Each point is one 600 s OpenFAST simulation. In the 3D view the axes are the three envelope inputs; the six seeds of a condition sit side by side because their realised mean wind speed differs slightly. Colour by regime to see which simulations are used for training and how far each test point lies from them; colour by damage to see how fatigue grows with wind and waves. Drag to rotate, scroll to zoom, click a point to select it.</p>
+        <p class="how">One point = one 600 s simulation. Drag to rotate, click to select.</p>
       </div>
       <div class="column is-5">
         <div class="buttons has-addons is-centered" id="profile-mode" style="margin-bottom:0.25rem;">
@@ -263,7 +263,7 @@
           <button type="button" class="button is-small" data-mode="life">Lifetime (25 years)</button>
         </div>
         <div id="plot-profile" class="plot plot-tall"></div>
-        <p class="how"><strong>How to read.</strong> <em>Selected simulation:</em> damage of one 600 s run at each of the 30 sections of the tower chosen above (log scale: each labelled power of ten is 10× the previous one). The dotted line marks the section chosen with the slider. <em>Lifetime:</em> Σ damage × <code>damage_weight</code> over all 6,468 simulations, the 25-year damage of each section; <em>D</em> = 1 is the fatigue limit.</p>
+        <p class="how">Damage per section of the selected tower (log scale); dotted line = slider section. <em>D</em> = 1 is the fatigue limit.</p>
         <div id="sim-details">
         <dl class="sim-card" id="sim-card"></dl>
         <button class="button is-rounded is-dark is-small" id="sim-hf" type="button">
@@ -433,11 +433,11 @@ hf download DeCoDELab/FLOATBench \
     <div class="columns" style="margin-top:1rem;">
       <div class="column is-6">
         <div id="plot-crossover" class="plot"></div>
-        <p class="how"><strong>How to read.</strong> One point per model. On the dotted diagonal a model keeps its Global rank in the selected regime. Points far below the diagonal rank much better in that regime than globally; points far above rank much worse. With EX_EX selected, the networks that win in extrapolation sit bottom right.</p>
+        <p class="how">On the diagonal a model keeps its Global rank; below it, the model ranks better in this regime.</p>
       </div>
       <div class="column is-6">
         <div id="plot-heat" class="plot"></div>
-        <p class="how"><strong>How to read.</strong> Rel L² DEL of the selected model in each of the nine regime cells (rows: wind label, columns: wave label). Darker red means larger error. Click a table row or a point in any plot to change the model.</p>
+        <p class="how">Error of the selected model in the nine cells; darker = worse.</p>
       </div>
     </div>
     <p class="is-size-7 has-text-grey">Point estimates on the full test set. Condition-level bootstrap intervals are produced by <code>scripts/leaderboard/</code>. Rank changes are relative to the Global ranking of the same pool.</p>
@@ -462,7 +462,7 @@ hf download DeCoDELab/FLOATBench \
     </div>
     <p class="eff-insight" id="eff-insight"></p>
     <div id="plot-efficiency" class="plot plot-tall"></div>
-    <p class="how">Each bubble is a model of the selected tower: lower is more accurate, left is cheaper (log scales); bubble size = model size on disk. The dashed line joins the Pareto-optimal models (no model is both cheaper and more accurate). Hover a bubble for all its costs; click it to select it in the table above. Training time of stacked models and the weighted ensemble includes their base models.</p>
+    <p class="how">Lower = more accurate, left = cheaper (log scales); bubble = model size. Dashed line: Pareto front.</p>
   </div>
 </section>
 
@@ -551,35 +551,35 @@ hf download DeCoDELab/FLOATBench \
         <div class="box">
           <p class="title is-6">Error across the nine regimes (E2)</p>
           <figure class="image"><a href="figures/app_heatmap_regimes.png"><img src="figures/app_heatmap_regimes.png" alt="Heatmap of MRE DEL across the nine regimes"></a></figure>
-          <p class="how">MRE DEL of the top-10 Global surrogates per tower (REF, OPT1, OPT2 top to bottom). Columns group wave regimes; within each group the three sub-columns are wind regimes. The rightmost EX_EX column is the worst-case extrapolation regime.</p>
+          <p class="how">MRE DEL of the top-10 models per tower; EX_EX (rightmost) is the worst case.</p>
         </div>
       </div>
       <div class="column is-half">
         <div class="box">
           <p class="title is-6">Wind drives the extrapolation error (E2)</p>
           <figure class="image"><a href="figures/app_family_regime.png"><img src="figures/app_family_regime.png" alt="Family-aggregated error by wind and wave regime"></a></figure>
-          <p class="how">Family-aggregated MRE DEL by regime (rows: REF, OPT1, OPT2; left: wind regime; right: wave regime). The wind axis drives most of the extrapolation error; the wave axis is comparatively flat.</p>
+          <p class="how">Error by family and regime: wind extrapolation drives the error, waves stay flat.</p>
         </div>
       </div>
       <div class="column is-half">
         <div class="box">
           <p class="title is-6">Global vs EX_EX error per model (E2)</p>
           <figure class="image"><a href="figures/app_scatter_global_exex.png"><img src="figures/app_scatter_global_exex.png" alt="Scatter of Global vs EX_EX error per model"></a></figure>
-          <p class="how">Per-model MRE DEL, Global (y) vs EX_EX (x), log axes; NeuralNet navy, ensembles red, other families grey. Points below the diagonal have higher EX_EX error; NeuralNet variants stay closest to it, TabM departs farthest.</p>
+          <p class="how">Below the diagonal = worse at EX_EX. NeuralNet stays closest; TabM degrades most.</p>
         </div>
       </div>
       <div class="column is-half">
         <div class="box">
           <p class="title is-6">Predicted vs true damage across towers (E3)</p>
           <figure class="image"><a href="figures/app_scatter_e3.png"><img src="figures/app_scatter_e3.png" alt="Predicted vs true damage scatter for E3"></a></figure>
-          <p class="how">Top-3 Global surrogates per cross-tower fold (rows: folds), log–log axes. The bottom fold (OPT1+OPT2 → REF) under-predicts the held-out tower; the top two folds stay close to the diagonal.</p>
+          <p class="how">Top-3 models per fold; OPT1+OPT2 → REF under-predicts the held-out tower.</p>
         </div>
       </div>
       <div class="column is-half">
         <div class="box">
           <p class="title is-6">Stability of the regime labels</p>
           <figure class="image"><a href="figures/app_split_sensitivity.png"><img src="figures/app_split_sensitivity.png" alt="Sensitivity of regime labels to partition parameters"></a></figure>
-          <p class="how">Agreement with the released split and Jaccard index of the EX_EX set as each partition parameter is perturbed around its value (dashed line). Labels are stable for α in [0.05, 0.3]: agreement ≥ 97.9% and EX_EX Jaccard ≥ 0.90.</p>
+          <p class="how">Labels stay stable for α in [0.05, 0.3] (agreement ≥ 97.9%).</p>
         </div>
       </div>
       <div class="column is-half">
@@ -589,7 +589,7 @@ hf download DeCoDELab/FLOATBench \
             <div class="column"><figure class="image"><a href="figures/app_spacing_wind.png"><img src="figures/app_spacing_wind.png" alt="Nearest-neighbour spacing, wind subspace"></a></figure></div>
             <div class="column"><figure class="image"><a href="figures/app_spacing_wave.png"><img src="figures/app_spacing_wave.png" alt="Nearest-neighbour spacing, wave subspace"></a></figure></div>
           </div>
-          <p class="how">Nearest-neighbour distances between training points in standardised units, in the wind (left) and wave (right) subspaces. Their mean sets the spacing scale of the In-train threshold.</p>
+          <p class="how">Nearest-neighbour spacing of the training points; its mean sets the In-train threshold.</p>
         </div>
       </div>
     </div>

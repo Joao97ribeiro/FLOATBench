@@ -66,9 +66,8 @@ curl -L -o code.zip "{CODE_ZIP}"
 unzip code.zip -d FLOATBench &amp;&amp; cd FLOATBench
 conda env create -f environment.yml &amp;&amp; conda activate floatbench
 
-# 2. data, into data/{{ref,opt1,opt2}}/
-curl -L -o FLOATBench.zip "{DATA_ZIP}"
-unzip FLOATBench.zip &amp;&amp; mv FLOATBench data
+# 2. data: downloads the archive, checks it and unpacks data/{{ref,opt1,opt2}}/
+python scripts/download/run.py --flagfile=scripts/download/config.cfg
 
 # 3. smoke test (~10 min on one GPU), then the full E2 + E3 benchmark
 python scripts/run_benchmark.py --experiment=within --tower=ref --time_limit=120

@@ -203,7 +203,7 @@
 <section class="section has-background-light" id="explorer">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Dataset Explorer</h2>
-    <p class="subtitle is-6">All 6,468 simulations of the operating envelope, read directly from the Hugging Face dataset <a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench">DeCoDELab/FLOATBench</a> when this page opens. Pick a view, colour the points by regime or by damage, and click any simulation to see its damage along the tower for the three geometries, or switch to the 25-year lifetime damage.</p>
+    <p class="subtitle is-6">All 6,468 simulations of the operating envelope, read directly from the Hugging Face dataset <a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench">DeCoDELab/FLOATBench</a> when this page opens. Pick a view, colour the points by regime or by damage, and click any simulation to see its damage along the selected tower, or switch to the 25-year lifetime damage.</p>
     <p class="is-size-7 has-text-grey" id="ex-source" style="margin-top:-0.75rem;margin-bottom:1rem;"><span class="icon"><i class="fas fa-spinner fa-spin"></i></span> Loading the dataset from Hugging Face (DeCoDELab/FLOATBench)…</p>
 
     <div class="box">
@@ -263,7 +263,7 @@
           <button type="button" class="button is-small" data-mode="life">Lifetime (25 years)</button>
         </div>
         <div id="plot-profile" class="plot plot-tall"></div>
-        <p class="how"><strong>How to read.</strong> <em>Selected simulation:</em> damage of one 600 s run at each of the 30 sections, for the three towers under the same wind and waves (log scale: each labelled power of ten is 10× the previous one). The dotted line marks the section chosen with the slider. <em>Lifetime:</em> Σ damage × <code>damage_weight</code> over all 6,468 simulations, the 25-year damage of each section; <em>D</em> = 1 is the fatigue limit.</p>
+        <p class="how"><strong>How to read.</strong> <em>Selected simulation:</em> damage of one 600 s run at each of the 30 sections of the tower chosen above (log scale: each labelled power of ten is 10× the previous one). The dotted line marks the section chosen with the slider. <em>Lifetime:</em> Σ damage × <code>damage_weight</code> over all 6,468 simulations, the 25-year damage of each section; <em>D</em> = 1 is the fatigue limit.</p>
         <div id="sim-details">
         <dl class="sim-card" id="sim-card"></dl>
         <button class="button is-rounded is-dark is-small" id="sim-hf" type="button">

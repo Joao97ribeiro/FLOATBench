@@ -409,7 +409,8 @@ function drawProfile() {
   const section = Number(document.getElementById("ex-sec").value);
   const n = state.data.n_sections;
   const life = state.profileMode === "life";
-  const traces = TOWERS.map((tw) => {
+  const selTower = document.getElementById("ex-tower").value;
+  const traces = [selTower].map((tw) => {
     const h = state.data.towers[tw].height;
     let d;
     if (life) {
@@ -439,8 +440,8 @@ function drawProfile() {
   }
   const layout = baseLayout(t, {
     title: {
-      text: life ? "Lifetime (25-year) damage along the tower"
-        : `Simulation ${state.data.sims.sim_id[i]}: damage along the tower`,
+      text: life ? `${TOWER_LABEL[selTower]}: lifetime (25-year) damage along the tower`
+        : `${TOWER_LABEL[selTower]}, simulation ${state.data.sims.sim_id[i]}: damage along the tower`,
       font: { size: 13, color: t.ink }, x: 0.02, xanchor: "left",
     },
     xaxis: axis(t, life ? "25-year fatigue damage D [-] (log)" : "600 s fatigue damage [-] (log)", { type: "log", exponentformat: "power" }),

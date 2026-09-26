@@ -3,7 +3,7 @@
 // docs/scripts/build_data.py.
 
 const HF_API = "https://datasets-server.huggingface.co";
-const HF_DATASET = "DeCoDELab/FLOATBench";
+const HF_DATASET = "";
 const TOWERS = ["ref", "opt1", "opt2"];
 const TOWER_LABEL = { ref: "REF", opt1: "OPT1", opt2: "OPT2" };
 const GROUP_NAME = { IT: "In-train", IP: "Interpolate", EX: "Extrapolate" };

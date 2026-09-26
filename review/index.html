@@ -7,12 +7,12 @@
   <meta name="description" content="FLOATBench: a tabular dataset and regime-aware benchmark for fatigue prediction on 22 MW floating offshore wind turbine towers.">
   <meta property="og:title" content="FLOATBench: A Tabular Dataset and Benchmark for Fatigue Prediction on Floating Offshore Wind Turbine Towers">
   <meta property="og:description" content="582,120 section-level fatigue damage labels, a regime-aware split and an interactive leaderboard of tabular surrogates.">
-  <meta property="og:image" content="figures/overview.png">
-  <link rel="icon" type="image/png" href="figures/logo.png">
+    <link rel="icon" type="image/png" href="figures/logo.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="static/css/style.css?v=202609252106">
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <script src="static/data/data.js"></script>
   <script defer src="static/js/app.js?v=202609252106"></script>
 </head>
 <body>
@@ -25,36 +25,15 @@
       <h1 class="title is-2 publication-title" style="margin-bottom:1.5rem;">
         FLOATBench: A Tabular Dataset and Benchmark for Fatigue Prediction on Floating Offshore Wind Turbine Towers
       </h1>
-      <div class="is-size-5 publication-authors">
-        <span class="author-block"><a href="mailto:jpar@mit.edu">João Alves Ribeiro</a><sup>1</sup>,</span>
-        <span class="author-block">Bruno Alves Ribeiro<sup>2,3</sup>,</span>
-        <span class="author-block">Francisco Pimenta<sup>4</sup>,</span>
-        <span class="author-block">Sérgio M. O. Tavares<sup>5</sup>,</span>
-        <span class="author-block"><a href="mailto:faez@mit.edu">Faez Ahmed</a><sup>1</sup></span>
-      </div>
-      <div class="is-size-6 publication-affiliations" style="margin-top:0.4rem;">
-        <span><sup>1</sup>MIT</span> &nbsp;
-        <span><sup>2</sup>TU Delft</span> &nbsp;
-        <span><sup>3</sup>Brown University</span> &nbsp;
-        <span><sup>4</sup>University of Porto</span> &nbsp;
-        <span><sup>5</sup>University of Aveiro</span>
-      </div>
-
       <div class="publication-links" style="margin-top:1.5rem;">
-        <a href="https://arxiv.org/abs/2605.25717" class="button is-rounded is-dark">
-          <span class="icon"><i class="fas fa-file-pdf"></i></span><span>Paper</span>
-        </a>
-        <a href="https://arxiv.org/abs/2605.25717" class="button is-rounded is-dark">
-          <span class="icon"><i class="fas fa-archive"></i></span><span>arXiv</span>
-        </a>
-        <a href="https://github.com/Joao97ribeiro/FLOATBench" class="button is-rounded is-dark">
-          <span class="icon"><i class="fab fa-github"></i></span><span>Code</span>
-        </a>
-        <a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench" class="button is-rounded is-dark">
-          <span class="icon"><i class="fas fa-database"></i></span><span>Dataset</span>
+        <a href="#explorer" class="button is-rounded is-dark">
+          <span class="icon"><i class="fas fa-cube"></i></span><span>Dataset explorer</span>
         </a>
         <a href="#leaderboard" class="button is-rounded is-dark">
           <span class="icon"><i class="fas fa-trophy"></i></span><span>Leaderboard</span>
+        </a>
+        <a href="#findings" class="button is-rounded is-dark">
+          <span class="icon"><i class="fas fa-chart-line"></i></span><span>Results</span>
         </a>
       </div>
     </div>
@@ -64,17 +43,6 @@
 <!-- ============ PAPER HIGHLIGHTS ============ -->
 <section class="section">
   <div class="container is-max-desktop">
-    <div class="has-text-centered" style="margin:0 0 1.5rem;padding:0.85rem 0;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;">
-      <i class="fas fa-database" style="color:#c05621;margin-right:0.6rem;"></i>
-      <span style="text-transform:uppercase;letter-spacing:0.1em;color:#c05621;font-size:0.75rem;font-weight:700;">Dataset on Hugging Face</span>
-      &nbsp;&nbsp;
-      <span style="color:#2d3748;">load it with one line:
-        <code>load_dataset("DeCoDELab/FLOATBench", "ref")</code>
-      </span>
-      <span style="color:#cbd5e0;margin:0 0.5rem;">·</span>
-      <a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench" style="color:#718096;font-size:0.85rem;white-space:nowrap;">Open on HF →</a>
-    </div>
-
     <p class="has-text-centered" style="font-size:1.25rem;font-style:italic;color:#2d3748;margin-bottom:2rem;font-weight:500;">
       Does model selection stay valid as predictions move from interpolation to extrapolation?
     </p>
@@ -125,10 +93,10 @@
   <div class="container is-max-desktop">
     <h2 class="title is-3">Dataset</h2>
     <div class="content has-text-justified">
-      <p><strong>Operating envelope.</strong> Each tower is simulated across a 22 × 7 × 7 grid of environmental conditions: 22 mean hub-height wind speeds at the midpoints of 1 m/s bins from cut-in (3 m/s) to cut-out (25 m/s), and, for each wind speed, seven significant wave heights <em>H<sub>s</sub></em> with seven peak periods <em>T<sub>p</sub></em> per <em>H<sub>s</sub></em>, sampled from the joint wind–wave operating distribution used in <a href="https://joao97ribeiro.github.io/FLOAT/">FLOAT</a>. This yields 49 sea states per wind speed and 1,078 unique (wind, wave) operating points per tower. Wind and waves are aligned.</p>
+      <p><strong>Operating envelope.</strong> Each tower is simulated across a 22 × 7 × 7 grid of environmental conditions: 22 mean hub-height wind speeds at the midpoints of 1 m/s bins from cut-in (3 m/s) to cut-out (25 m/s), and, for each wind speed, seven significant wave heights <em>H<sub>s</sub></em> with seven peak periods <em>T<sub>p</sub></em> per <em>H<sub>s</sub></em>, sampled from the joint wind–wave operating distribution used in FLOAT (cited in the paper). This yields 49 sea states per wind speed and 1,078 unique (wind, wave) operating points per tower. Wind and waves are aligned.</p>
       <p><strong>Simulation setup.</strong> All simulations follow IEC 61400-3-2 design load case (DLC) 1.2 (normal power production) and run in OpenFAST. Each operating point is simulated with 6 independent turbulence seeds, giving 6,468 ten-minute simulations per tower; runs last 1,000 s with the final 600 s post-processed. Each run records 88 time series at 10 Hz (turbine, tower and platform outputs), about 190 GB across the 19,404 runs of the three towers, at roughly one CPU-hour per run.</p>
       <p><strong>Damage labels.</strong> For each operating condition and each of the 30 tower sections, the bending-moment time series is converted to stress, rainflow-counted and Miner-summed against the DNV-RP-C203 S–N curve E, giving the cumulative damage <em>D</em>, the released label. The load-equivalent transform DEL ∝ <em>D</em><sup>1/<em>m</em></sup> with <em>m</em> = 3 is used as the regression target.</p>
-      <p><strong>Tower geometries.</strong> Three towers share the same three-column semi-submersible platform, controller and mooring. <span class="tw-ref">REF</span> is the IEA-22-280-RWT baseline tower, designed for fixed-bottom conditions without explicit fatigue constraints (<em>D</em> ≈ 32 at the base, about 9 months of life under Miner's rule on a 25-year horizon). <span class="tw-opt1">OPT1</span> is an intermediate fatigue-aware redesign produced by <a href="https://joao97ribeiro.github.io/FLOAT/">FLOAT</a> (<em>D</em> from 0.49 to 1.28 along the height), and <span class="tw-opt2">OPT2</span> the final iterate targeting <em>D</em> ≤ 0.90 (labels from 0.78 to 0.94). The redesigns change the outer diameter and wall thickness at constant tower height (149.386 m). Each tower is discretised into 30 sections, with damage labels at the section midpoints: 194,040 rows per tower and 582,120 in total.</p>
+      <p><strong>Tower geometries.</strong> Three towers share the same three-column semi-submersible platform, controller and mooring. <span class="tw-ref">REF</span> is the IEA-22-280-RWT baseline tower, designed for fixed-bottom conditions without explicit fatigue constraints (<em>D</em> ≈ 32 at the base, about 9 months of life under Miner's rule on a 25-year horizon). <span class="tw-opt1">OPT1</span> is an intermediate fatigue-aware redesign produced by FLOAT (cited in the paper) (<em>D</em> from 0.49 to 1.28 along the height), and <span class="tw-opt2">OPT2</span> the final iterate targeting <em>D</em> ≤ 0.90 (labels from 0.78 to 0.94). The redesigns change the outer diameter and wall thickness at constant tower height (149.386 m). Each tower is discretised into 30 sections, with damage labels at the section midpoints: 194,040 rows per tower and 582,120 in total.</p>
     </div>
     <figure class="image" style="margin-bottom:0.5rem;">
       <img src="figures/simulation_pipeline.png" alt="OpenFAST outputs and damage pipeline">
@@ -139,7 +107,7 @@
     </figure>
     <p class="is-size-7 has-text-grey" style="margin-bottom:2rem;">Geometry and lifetime damage profiles along the tower height for the three released towers REF, OPT1 and OPT2.</p>
 
-    <h3 class="title is-5">Files (per tower, on Hugging Face)</h3>
+    <h3 class="title is-5">Files (per tower)</h3>
     <div class="table-container">
       <table class="table is-narrow is-fullwidth schema">
         <thead><tr><th>File</th><th class="num">Rows</th><th class="num">Columns</th><th>Content</th></tr></thead>
@@ -203,8 +171,8 @@
 <section class="section has-background-light" id="explorer">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Dataset Explorer</h2>
-    <p class="subtitle is-6">All 6,468 simulations of the operating envelope, read directly from the Hugging Face dataset <a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench">DeCoDELab/FLOATBench</a> when this page opens. Pick a view, colour the points by regime or by damage, and click any simulation to see its damage along the selected tower, or switch to the 25-year lifetime damage.</p>
-    <p class="is-size-7 has-text-grey" id="ex-source" style="margin-top:-0.75rem;margin-bottom:1rem;"><span class="icon"><i class="fas fa-spinner fa-spin"></i></span> Loading the dataset from Hugging Face (DeCoDELab/FLOATBench)…</p>
+    <p class="subtitle is-6">All 6,468 simulations of the operating envelope, from the released dataset. Pick a view, colour the points by regime or by damage, and click any simulation to see its damage along the selected tower, or switch to the 25-year lifetime damage.</p>
+    <p class="is-size-7 has-text-grey" id="ex-source" style="margin-top:-0.75rem;margin-bottom:1rem;">Loading the dataset…</p>
 
     <div class="box">
       <div class="columns is-multiline is-vcentered">
@@ -266,73 +234,12 @@
         <p class="how">Damage per section of the selected tower (log scale); dotted line = slider section. <em>D</em> = 1 is the fatigue limit.</p>
         <div id="sim-details">
         <dl class="sim-card" id="sim-card"></dl>
-        <button class="button is-rounded is-dark is-small" id="sim-hf" type="button">
-          <span class="icon"><i class="fas fa-database"></i></span><span>Load its 30 rows from Hugging Face</span>
-        </button>
-        <div class="is-size-7" id="sim-hf-status" style="margin-top:0.6rem;"></div>
         </div>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ============ LIVE ROWS ============ -->
-<section class="section" id="hf">
-  <div class="container is-max-desktop">
-    <h2 class="title is-3">Live Rows from Hugging Face</h2>
-    <p class="subtitle is-6">Read directly from <a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench">DeCoDELab/FLOATBench</a> through the Hugging Face dataset viewer API. Every row is one tower section of one simulation.</p>
-
-    <div class="box">
-      <div class="columns is-multiline is-vcentered">
-        <div class="column is-2">
-          <label class="label is-small" for="hf-config">Tower</label>
-          <div class="select is-fullwidth is-small">
-            <select id="hf-config"><option value="ref">ref</option><option value="opt1">opt1</option><option value="opt2">opt2</option></select>
-          </div>
-        </div>
-        <div class="column is-2">
-          <label class="label is-small" for="hf-split">Split</label>
-          <div class="select is-fullwidth is-small">
-            <select id="hf-split"><option value="test">test</option><option value="train">train</option></select>
-          </div>
-        </div>
-        <div class="column is-4">
-          <label class="label is-small" for="hf-filter">Filter</label>
-          <div class="select is-fullwidth is-small">
-            <select id="hf-filter">
-              <option value="">No filter</option>
-              <option value="&quot;wind_group&quot;='Extrapolate' AND &quot;wave_group&quot;='Extrapolate'">EX_EX (deepest extrapolation)</option>
-              <option value="&quot;section_id&quot;=30">Tower top (section 30)</option>
-              <option value="&quot;section_id&quot;=1">Tower base (section 1)</option>
-              <option value="&quot;wind_speed&quot;=10.5">Near rated wind (10.5 m/s)</option>
-            </select>
-          </div>
-        </div>
-        <div class="column is-4 has-text-right">
-          <button class="button is-small is-rounded" id="hf-prev" type="button" aria-label="Previous page"><span class="icon"><i class="fas fa-chevron-left"></i></span></button>
-          <span id="hf-page" class="is-size-7" style="margin:0 0.5rem;">rows 1–20</span>
-          <button class="button is-small is-rounded" id="hf-next" type="button" aria-label="Next page"><span class="icon"><i class="fas fa-chevron-right"></i></span></button>
-        </div>
-      </div>
-    </div>
-    <p class="is-size-7 has-text-grey" id="hf-status">Loading rows…</p>
-    <div class="table-container"><table class="table is-narrow is-hoverable is-fullwidth data" id="hf-table"></table></div>
-
-    <div class="columns" style="margin-top:1rem;">
-      <div class="column">
-        <pre><code># load one tower on the fly
-from datasets import load_dataset
-ds = load_dataset("DeCoDELab/FLOATBench", "ref")
-print(ds)  # train: 51,840 rows, test: 142,200 rows</code></pre>
-      </div>
-      <div class="column">
-        <pre><code># or download the CSVs once
-hf download DeCoDELab/FLOATBench \
-    --repo-type=dataset --local-dir=data</code></pre>
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- ============ BENCHMARK PROTOCOL ============ -->
 <section class="section has-background-light" id="split">
@@ -608,65 +515,7 @@ hf download DeCoDELab/FLOATBench \
   </div>
 </section>
 
-<!-- ============ RESOURCES ============ -->
-<section class="section">
-  <div class="container is-max-desktop">
-    <h2 class="title is-3">Resources</h2>
-    <div class="columns is-multiline">
-      <div class="column is-half">
-        <div class="box">
-          <p class="title is-5"><i class="fab fa-github"></i> &nbsp;<a href="https://github.com/Joao97ribeiro/FLOATBench">FLOATBench (code)</a></p>
-          <p>Evaluation harness, regime-aware splitter, bootstrap leaderboards and every paper analysis, all driven by <code>--flagfile</code> configs. Smoke test in ~10 min, full reproduction of E2 + E3 in ~48 GPU-hours.</p>
-        </div>
-      </div>
-      <div class="column is-half">
-        <div class="box">
-          <p class="title is-5"><i class="fas fa-database"></i> &nbsp;<a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench">DeCoDELab/FLOATBench (dataset)</a></p>
-          <p>Train and test CSVs for the three towers with the regime labels, lifetime weights and section geometry. Released under CC-BY-4.0.</p>
-        </div>
-      </div>
-      <div class="column is-half">
-        <div class="box">
-          <p class="title is-5"><i class="fas fa-file-pdf"></i> &nbsp;<a href="https://arxiv.org/abs/2605.25717">Paper (arXiv 2605.25717)</a></p>
-          <p>Dataset construction, the regime-aware partition, the three protocol levels and the full benchmark results.</p>
-        </div>
-      </div>
-      <div class="column is-half">
-        <div class="box">
-          <p class="title is-5"><i class="fas fa-water"></i> &nbsp;<a href="https://joao97ribeiro.github.io/FLOAT/">FLOAT (design framework)</a></p>
-          <p>The fatigue-aware tower design framework that produced the OPT1 and OPT2 geometries of FLOATBench.</p>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
 
-<!-- ============ CITATION ============ -->
-<section class="section has-background-light">
-  <div class="container is-max-desktop">
-    <div class="level is-mobile" style="margin-bottom:1rem;">
-      <div class="level-left">
-        <h2 class="title is-3" style="margin-bottom:0;">Citation</h2>
-      </div>
-      <div class="level-right">
-        <button id="copy-bibtex" class="button is-rounded is-dark" title="Copy BibTeX to clipboard">
-          <span class="icon"><i class="fas fa-copy"></i></span><span>Copy BibTeX</span>
-        </button>
-      </div>
-    </div>
-    <div class="bibtex-block">
-      <pre style="white-space:pre-wrap;"><code id="bibtex">@misc{ribeiro2026floatbenchdatasetbenchmarkfloating,
-      title={FLOATBench: A Dataset and Benchmark for Floating Offshore Wind Turbine Tower Fatigue},
-      author={João Alves Ribeiro and Bruno Alves Ribeiro and Francisco Pimenta and Sérgio M. O. Tavares and Faez Ahmed},
-      year={2026},
-      eprint={2605.25717},
-      archivePrefix={arXiv},
-      primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2605.25717},
-}</code></pre>
-    </div>
-  </div>
-</section>
 
 <!-- ============ ACKNOWLEDGEMENTS ============ -->
 <section class="section">
@@ -680,7 +529,7 @@ hf download DeCoDELab/FLOATBench \
 
 <footer class="footer">
   <div class="content has-text-centered">
-    <p>Page template adapted from the <a href="https://github.com/eliahuhorwitz/Academic-project-page-template">Academic Project Page Template</a>. Source on <a href="https://github.com/Joao97ribeiro/FLOATBench/tree/main/docs">GitHub</a>.</p>
+    <p>Anonymized project page for review. Page template adapted from the Academic Project Page Template.</p>
   </div>
 </footer>
 

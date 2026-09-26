@@ -44,3 +44,16 @@ holds the E2 pools with Rel L² DEL globally, per regime and per section.
 
 After changing `static/`, bump the `?v=` stamp in `index.html` and in the
 `fetch()` calls of `static/js/app.js` so browsers do not keep an old copy.
+
+## Anonymized copy for review
+
+`review/` is an anonymized copy of the page (no authors, affiliations,
+preprint, citation, repository or dataset links; data embedded in
+`review/static/data/data.js`), served through anonymous.4open.science.
+Regenerate it after any change to the site:
+
+```bash
+python scripts/build_review.py
+```
+
+The script fails if an identifying term is left in the copy.

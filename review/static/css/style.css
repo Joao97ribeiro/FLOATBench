@@ -1,0 +1,168 @@
+/* FLOATBench project page custom styles (same base as the FLOAT page) */
+
+:root {
+  /* Paper palette: floatbench/colors.py */
+  --ink: #333333;
+  --ink-2: #555555;
+  --ink-3: #555555;
+  --line: #f2f2f2;
+  --navy: #294366;
+  --red: #b02c27;
+  --teal: #7cc0cd;
+  --it: #294366;
+  --ip: #b8b8b8;
+  --ex: #b02c27;
+}
+
+.publication-title {
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.publication-authors a {
+  color: #1d3557;
+}
+
+.publication-links .button {
+  margin: 0.25rem;
+}
+
+.box {
+  height: 100%;
+}
+
+pre code {
+  font-size: 0.85rem;
+}
+
+.hero.is-light img {
+  border-radius: 8px;
+}
+
+/* ---------- highlights ---------- */
+.highlights {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.highlight {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0.9rem 1rem;
+  margin-bottom: 0 !important;
+}
+
+.highlight .title {
+  margin-bottom: 1.25rem !important;
+}
+
+/* ---------- plots ---------- */
+.plot { width: 100%; height: 380px; }
+.plot-tall { height: 480px; }
+.plot-short { height: 280px; }
+
+.legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1rem;
+  font-size: 0.82rem;
+  color: var(--ink-2);
+}
+
+.legend-row span { display: inline-flex; align-items: center; gap: 0.4rem; }
+.legend-row i { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+.sim-card {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem 0.75rem;
+  margin: 0.5rem 0 0.9rem;
+  font-size: 0.85rem;
+}
+
+.sim-card div { display: flex; flex-direction: column; }
+.sim-card dt { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3); }
+.sim-card dd { margin: 0; font-family: monospace; font-variant-numeric: tabular-nums; }
+
+/* ---------- tables ---------- */
+table.data { font-size: 0.82rem; font-variant-numeric: tabular-nums; background: transparent; }
+table.data th, table.data td { text-align: right !important; white-space: nowrap; }
+table.data th.l, table.data td.l { text-align: left !important; }
+table.data td.mono { font-family: monospace; }
+.table-container { max-height: 560px; overflow: auto; }
+.lb-table-wrap { max-height: 520px; }
+table.lb tbody tr { cursor: pointer; }
+table.lb tbody tr.sel { background: #e8eef5; }
+.fam-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.up { color: var(--it); font-weight: 600; }
+.down { color: var(--ex); font-weight: 600; }
+
+.tag.tag-it, .tag.tag-ip, .tag.tag-ex { color: #fff; font-weight: 600; }
+.tag.tag-it { background: var(--it); }
+.tag.tag-ip { background: var(--ip); }
+.tag.tag-ex { background: var(--ex); }
+
+/* ---------- family chips ---------- */
+.chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; }
+.chip {
+  display: inline-flex; align-items: center; gap: 0.4rem;
+  font-size: 0.8rem; color: var(--ink-2);
+  padding: 0.25rem 0.75rem; border-radius: 999px;
+  border: 1px solid #dbdbdb; background: #fff; cursor: pointer;
+}
+.chip[aria-pressed="false"] { opacity: 0.4; }
+.chip .dot { width: 9px; height: 9px; border-radius: 50%; }
+
+/* ---------- regime grid ---------- */
+.regime-grid { display: grid; grid-template-columns: auto repeat(3, 1fr); gap: 4px; font-size: 0.82rem; }
+.regime-grid .h { font-size: 0.72rem; color: var(--ink-3); align-self: center; padding: 4px; }
+.regime-grid .c { border-radius: 6px; padding: 0.6rem; background: #f2f2f2; display: flex; flex-direction: column; }
+.regime-grid .c b { font-size: 1.3rem; font-variant-numeric: tabular-nums; color: var(--navy); }
+.regime-grid .c span { color: var(--ink-3); font-size: 0.72rem; }
+.regime-grid .c.deep { background: #f3dfde; }
+.regime-grid .c.deep b { color: var(--red); }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1023px) {
+  .highlights { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 640px) {
+  .highlights { grid-template-columns: 1fr 1fr; }
+  .sim-card { grid-template-columns: repeat(2, 1fr); }
+  .plot-tall { height: 400px; }
+}
+
+/* ---------- captions and schema ---------- */
+.how { font-size: 0.8rem; color: var(--ink-2); line-height: 1.45; margin: 0.4rem 0 1rem; }
+.tw-ref { color: #8f8f8f; font-weight: 600; }
+.tw-opt1 { color: #294366; font-weight: 600; }
+.tw-opt2 { color: #b02c27; font-weight: 600; }
+table.schema { font-size: 0.85rem; }
+table.schema td { vertical-align: top; }
+table.schema td.grp { font-weight: 600; color: var(--navy); white-space: nowrap; }
+table.schema th.num, table.schema td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---------- results ---------- */
+.result-block { margin-bottom: 3rem; }
+.result-tag { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #c05621; margin-bottom: 0.3rem; }
+.takeaway { border-left: 3px solid #294366; padding: 0.5rem 0.9rem; background: #f5f7fa; font-style: italic; color: #2d3748; }
+table.results td, table.results th { white-space: nowrap; }
+.takeaway-live { border-left: 3px solid #b02c27; background: #f5f7fa !important; color: #2d3748; padding: 0.7rem 1rem; font-size: 0.92rem; }
+.eff-bar { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; align-items: center; margin-bottom: 0.5rem; }
+.eff-group { display: flex; align-items: center; gap: 0.5rem; }
+.eff-group .buttons { margin-bottom: 0 !important; }
+.eff-group .buttons .button { margin-bottom: 0 !important; }
+.eff-label { font-size: 0.8rem; font-weight: 600; color: var(--ink-2); }
+.eff-insight { font-size: 0.9rem; color: #2d3748; border-left: 3px solid #b02c27; padding: 0.3rem 0.8rem; margin-bottom: 0.3rem; }
+.eff-legend { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem 1rem; font-size: 0.78rem; color: var(--ink-2); margin: 0.2rem 0 0.4rem; }
+.eff-leg-item { display: flex; flex-direction: column; gap: 0.2rem; }
+.eff-leg-title { font-weight: 600; color: #333; }
+.eff-sizes { display: flex; align-items: center; gap: 0.35rem; }
+.eff-sizes i { display: inline-block; border-radius: 50%; background: #d69b99; border: 1px solid #555; }
+.eff-grad { display: block; height: 10px; width: 100%; max-width: 160px; border-radius: 2px; background: linear-gradient(90deg, #f2f2f2, #d69b99, #d06662, #b02c27, #932421, #802421); border: 1px solid #ddd; }
+.eff-grad-lab { font-size: 0.72rem; }
+@media (max-width: 768px) { .eff-legend { grid-template-columns: 1fr 1fr; } }

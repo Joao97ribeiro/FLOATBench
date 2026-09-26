@@ -11,9 +11,9 @@
   <link rel="icon" type="image/png" href="figures/logo.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="static/css/style.css?v=202609252019">
+  <link rel="stylesheet" href="static/css/style.css?v=202609252020">
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="static/js/app.js?v=202609252019"></script>
+  <script defer src="static/js/app.js?v=202609252020"></script>
 </head>
 <body>
 
@@ -443,22 +443,26 @@ hf download DeCoDELab/FLOATBench \
     <p class="is-size-7 has-text-grey">Point estimates on the full test set. Condition-level bootstrap intervals are produced by <code>scripts/leaderboard/</code>. Rank changes are relative to the Global ranking of the same pool.</p>
 
     <h3 class="title is-5" style="margin-top:2.5rem;">Accuracy vs cost</h3>
-    <p class="is-size-6" style="margin-bottom:0.8rem;">Is the more accurate model also the more expensive one? Each bubble is a model of the tower and regime chosen above: error on the vertical axis (lower is better), cost on the horizontal axis (left is cheaper), bubble size = model size on disk.</p>
-    <div class="notification is-light takeaway-live" id="eff-insight"></div>
-    <div class="columns">
-      <div class="column is-8">
-        <div class="buttons has-addons" id="eff-x" style="margin-bottom:0.25rem;">
+    <div class="eff-bar">
+      <div class="eff-group">
+        <span class="eff-label">Error in</span>
+        <div class="buttons has-addons" id="eff-regime">
+          <button type="button" class="button is-small" data-regime="Global">Global</button>
+          <button type="button" class="button is-small is-dark is-selected" data-regime="EX_EX">EX_EX</button>
+        </div>
+      </div>
+      <div class="eff-group">
+        <span class="eff-label">Cost</span>
+        <div class="buttons has-addons" id="eff-x">
           <button type="button" class="button is-small is-dark is-selected" data-x="latency_ms">Inference latency</button>
           <button type="button" class="button is-small" data-x="train_s">Training time</button>
+          <button type="button" class="button is-small" data-x="size_mb">Model size</button>
         </div>
-        <div id="plot-efficiency" class="plot plot-tall"></div>
-      </div>
-      <div class="column is-4">
-        <p class="is-size-7 has-text-weight-semibold" style="margin-bottom:0.3rem;">Pareto-optimal models <span class="has-text-grey has-text-weight-normal">(no model is both cheaper and more accurate)</span></p>
-        <div class="table-container"><table class="table is-narrow is-fullwidth data" id="eff-front"></table></div>
-        <p class="how">Log scales on both axes. Training time is the AutoGluon fit time on one GPU workstation; for stacked models (L2, L3) and the weighted ensemble it includes their base models. Bagged RandomForest and ExtraTrees are fit once with out-of-bag estimates, so they train in seconds.</p>
       </div>
     </div>
+    <p class="eff-insight" id="eff-insight"></p>
+    <div id="plot-efficiency" class="plot plot-tall"></div>
+    <p class="how">Each bubble is a model of the selected tower: lower is more accurate, left is cheaper (log scales); bubble size = model size on disk. The dashed line joins the Pareto-optimal models (no model is both cheaper and more accurate). Hover a bubble for all its costs; click it to select it in the table above. Training time of stacked models and the weighted ensemble includes their base models.</p>
   </div>
 </section>
 

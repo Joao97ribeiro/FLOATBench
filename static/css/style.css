@@ -152,3 +152,9 @@ table.schema th.num, table.schema td.num { text-align: right; font-variant-numer
 .takeaway { border-left: 3px solid #294366; padding: 0.5rem 0.9rem; background: #f5f7fa; font-style: italic; color: #2d3748; }
 table.results td, table.results th { white-space: nowrap; }
 .takeaway-live { border-left: 3px solid #b02c27; background: #f5f7fa !important; color: #2d3748; padding: 0.7rem 1rem; font-size: 0.92rem; }
+.eff-bar { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; align-items: center; margin-bottom: 0.5rem; }
+.eff-group { display: flex; align-items: center; gap: 0.5rem; }
+.eff-group .buttons { margin-bottom: 0 !important; }
+.eff-group .buttons .button { margin-bottom: 0 !important; }
+.eff-label { font-size: 0.8rem; font-weight: 600; color: var(--ink-2); }
+.eff-insight { font-size: 0.9rem; color: #2d3748; border-left: 3px solid #b02c27; padding: 0.3rem 0.8rem; margin-bottom: 0.3rem; }

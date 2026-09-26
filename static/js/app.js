@@ -218,7 +218,7 @@ async function datasetFromHF() {
 }
 
 async function bundledDataset() {
-  const data = await fetch("static/data/dataset.json?v=202609252019").then((r) => r.json());
+  const data = await fetch("static/data/dataset.json?v=202609252020").then((r) => r.json());
   const damage = {};
   TOWERS.forEach((tw) => { damage[tw] = decodeDamage(data.towers[tw].log_damage_i16); });
   return { data, damage };
@@ -700,6 +700,7 @@ function fmtSize(mb) {
 const EFF_AXIS = {
   train_s: { title: "Training time [s] (log)", fmt: (v) => fmtTime(v) },
   latency_ms: { title: "Inference latency [ms per row] (log)", fmt: (v) => `${(v * 1000).toFixed(1)} µs/row` },
+  size_mb: { title: "Model size on disk [MB] (log)", fmt: (v) => `${fmtSize(v)} MB` },
 };
 
 function fmtTime(sec) {
@@ -728,8 +729,13 @@ function drawEfficiency() {
   const { tower, regime, rows } = lbRows();
   const key = effKey();
   const ax = EFF_AXIS[key];
+  document.querySelectorAll("#eff-regime button").forEach((b) => {
+    const on = b.dataset.regime === regime;
+    b.classList.toggle("is-dark", on);
+    b.classList.toggle("is-selected", on);
+  });
   const valid = rows.filter((r) => r[key] > 0 && state.families.has(r.family));
-  const bubble = (r) => 6 + 4 * Math.log10(1 + Math.max(r.size_mb || 0, 0.01) * 10);
+  const bubble = (r) => (key === "size_mb" ? 10 : 6 + 4 * Math.log10(1 + Math.max(r.size_mb || 0, 0.01) * 10));
   const traces = [];
   for (const fam of FAMILIES) {
     const rs = valid.filter((r) => r.family === fam);
@@ -776,8 +782,8 @@ function drawEfficiency() {
     xaxis: axis(t, ax.title, { type: "log", exponentformat: "power" }),
     yaxis: axis(t, `Rel L² DEL, ${regime} (log)`, { type: "log", exponentformat: "none", tickformat: ".2f" }),
     showlegend: true,
-    legend: { orientation: "h", x: 0, y: -0.2, font: { color: t.ink2, size: 11 } },
-    margin: { l: 64, r: 16, t: 12, b: 90 },
+    legend: { orientation: "v", x: 1.01, y: 1, font: { color: t.ink2, size: 11 } },
+    margin: { l: 64, r: 130, t: 12, b: 56 },
     annotations,
   }));
   const el = document.getElementById("plot-efficiency");
@@ -789,27 +795,18 @@ function drawEfficiency() {
     el._clickBound = true;
   }
 
-  // Pareto table.
-  document.getElementById("eff-front").innerHTML =
-    `<thead><tr><th class="l">Model</th><th>${key === "train_s" ? "Train" : "µs/row"}</th><th>Rel L²</th></tr></thead><tbody>`
-    + front.map((r) => `<tr data-key="${modelKey(r)}" style="cursor:pointer"><td class="l mono"><span class="fam-dot" style="background:${t.family[r.family]}"></span>${shortName(r.model)}</td>`
-      + `<td>${key === "train_s" ? fmtTime(r.train_s) : (r.latency_ms * 1000).toFixed(1)}</td><td>${r.rel_l2[regime].toFixed(4)}</td></tr>`).join("")
-    + "</tbody>";
-  document.querySelectorAll("#eff-front tbody tr").forEach((tr) =>
-    tr.addEventListener("click", () => { state.lbSel = tr.dataset.key; drawLeaderboard(); }));
-
   // One-line takeaway: best model in this regime vs the Global rank-1.
   const bestR = rows.slice().sort((a, b) => a.rel_l2[regime] - b.rel_l2[regime])[0];
   const globalR = rows.slice().sort((a, b) => a.rel_l2.Global - b.rel_l2.Global)[0];
-  const cost = (r) => `trains in ${fmtTime(r.train_s)} and predicts in ${(r.latency_ms * 1000).toFixed(1)} µs/row`;
+  const cost = (r) => `trains in ${fmtTime(r.train_s)}`;
   const box = document.getElementById("eff-insight");
   if (regime === "Global" || modelKey(bestR) === modelKey(globalR)) {
-    box.innerHTML = `<strong>${TOWER_LABEL[tower]}, ${regime}:</strong> the most accurate model, <code>${shortName(bestR.model)}</code> (Rel L² ${bestR.rel_l2[regime].toFixed(3)}), ${cost(bestR)}.`;
+    box.innerHTML = `<strong>${TOWER_LABEL[tower]}, ${regime}:</strong> best model <code>${shortName(bestR.model)}</code>, Rel L² ${bestR.rel_l2[regime].toFixed(3)}, ${cost(bestR)}.`;
   } else {
     const ratio = globalR.train_s / bestR.train_s;
-    box.innerHTML = `<strong>${TOWER_LABEL[tower]}, ${regime}:</strong> the most accurate model, <code>${shortName(bestR.model)}</code> (Rel L² ${bestR.rel_l2[regime].toFixed(3)}), ${cost(bestR)}. `
-      + `The Global rank-1 <code>${shortName(globalR.model)}</code> reaches ${globalR.rel_l2[regime].toFixed(3)} here and ${cost(globalR)}`
-      + (ratio > 2 ? `: ${Math.round(ratio)}× more training time for ${(globalR.rel_l2[regime] / bestR.rel_l2[regime]).toFixed(1)}× the error.` : ".");
+    box.innerHTML = `<strong>${TOWER_LABEL[tower]}, ${regime}:</strong> best model <code>${shortName(bestR.model)}</code> (${bestR.rel_l2[regime].toFixed(3)}) ${cost(bestR)}; `
+      + `the Global rank-1 <code>${shortName(globalR.model)}</code> gets ${globalR.rel_l2[regime].toFixed(3)}`
+      + (ratio > 2 ? ` with ${Math.round(ratio)}× more training time.` : ".");
   }
 }
 
@@ -892,6 +889,10 @@ function initLeaderboard() {
     const f = c.dataset.fam;
     if (state.families.has(f)) state.families.delete(f); else state.families.add(f);
     c.setAttribute("aria-pressed", state.families.has(f));
+    drawLeaderboard();
+  }));
+  document.querySelectorAll("#eff-regime button").forEach((btn) => btn.addEventListener("click", () => {
+    document.getElementById("lb-regime").value = btn.dataset.regime;
     drawLeaderboard();
   }));
   document.querySelectorAll("#eff-x button").forEach((btn) => btn.addEventListener("click", () => {
@@ -983,7 +984,7 @@ async function main() {
   initNav();
   initHF();
   watchTheme();
-  const lbReady = fetch("static/data/leaderboard.json?v=202609252019").then((r) => r.json()).then((lb) => {
+  const lbReady = fetch("static/data/leaderboard.json?v=202609252020").then((r) => r.json()).then((lb) => {
     state.lb = lb;
     initLeaderboard();
   });

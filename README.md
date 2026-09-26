@@ -4,15 +4,6 @@
 
 # FLOATBench: A Tabular Dataset and Benchmark for Fatigue Prediction on Floating Offshore Wind Turbine Towers
 <p align="center">
-  <a href="https://arxiv.org/abs/2605.25717">
-    <img src="https://img.shields.io/badge/arXiv-2605.25717-b31b1b.svg?logo=arxiv&logoColor=white">
-  </a>
-  <a href="https://joao97ribeiro.github.io/FLOATBench/">
-    <img src="https://img.shields.io/badge/project-page-2c5282.svg">
-  </a>
-  <a href="https://huggingface.co/datasets/DeCoDELab/FLOATBench">
-    <img src="https://img.shields.io/badge/dataset-DeCoDELab%2FFLOATBench-ffcc00.svg?logo=huggingface&logoColor=white">
-  </a>
   <a href="https://opensource.org/licenses/MIT">
     <img src="https://img.shields.io/badge/code--license-MIT-blue.svg">
   </a>
@@ -28,8 +19,8 @@ tower fatigue. It pairs **582,120 section-level fatigue damage
 labels** across three 22 MW floating-tower geometries with a
 **regime-aware evaluation protocol** that stratifies test points into
 in-train, interpolation, and extrapolation regions of the joint
-wind/wave operating envelope. The dataset is hosted on Hugging Face
-at [`DeCoDELab/FLOATBench`](https://huggingface.co/datasets/DeCoDELab/FLOATBench);
+wind/wave operating envelope. The dataset is available through the
+anonymized dataset link in the supplementary material of the paper;
 this repository contains the benchmark code, evaluation harness, and
 scripts to reproduce the paper results.
 
@@ -37,23 +28,14 @@ scripts to reproduce the paper results.
   <img src="docs/figures/overview.png" alt="FLOATBench overview" width="800"/>
 </p>
 
-### Authors:
-- **João Alves Ribeiro** (corresponding, MIT) — [jpar@mit.edu](mailto:jpar@mit.edu)
-- **Bruno Alves Ribeiro** (TU Delft & Brown University)
-- **Francisco Pimenta** (University of Porto)
-- **Sérgio M. O. Tavares** (University of Aveiro)
-- **Faez Ahmed** (MIT) — [faez@mit.edu](mailto:faez@mit.edu)
-
 ---
 
 
 ## FLOATBench Paper
 
-**FLOATBench** is presented in the following paper, which fully
-describes the dataset, the regime-aware partition, and the
-evaluation protocol: *FLOATBench: A Dataset and Benchmark for
-Floating Offshore Wind Turbine Tower Fatigue*
-([arXiv:2605.25717](https://arxiv.org/abs/2605.25717)).
+**FLOATBench** is presented in the accompanying paper (under
+review), which fully describes the dataset, the regime-aware
+partition, and the evaluation protocol.
 
 Across up to 96 tabular surrogates per tower (E1/E2) and up to 63
 per fold (E3) — **735 trained surrogates** in total — the
@@ -138,7 +120,7 @@ the cross-preset benchmark figures:
 **Recommended (conda, GPU):**
 
 ```bash
-git clone https://github.com/Joao97ribeiro/FLOATBench
+# download this anonymized repository and enter it
 cd FLOATBench
 conda env create -f environment.yml
 conda activate floatbench
@@ -152,7 +134,7 @@ TabPFN, Mitra) plus the splitter / plot helpers from
 **Alternative (pip, CPU or existing venv):**
 
 ```bash
-git clone https://github.com/Joao97ribeiro/FLOATBench
+# download this anonymized repository and enter it
 cd FLOATBench
 pip install torch  # any torch>=2.6,<2.10
 pip install -r requirements.txt
@@ -161,8 +143,8 @@ pip install -r requirements.txt
 ## Dataset
 
 The released CSVs, schema, and per-tower layout are documented in
-the dataset README on Hugging Face:
-[`DeCoDELab/FLOATBench`](https://huggingface.co/datasets/DeCoDELab/FLOATBench).
+the dataset README that ships with the anonymized dataset (link in
+the supplementary material of the paper).
 
 The three towers are:
 
@@ -171,26 +153,19 @@ The three towers are:
 - `opt2` — final iterate ($D \approx 0.9$, targeting $D \le 0.9$)
 
 The `opt1` and `opt2` geometries were produced by
-[**FLOAT**](https://github.com/Joao97ribeiro/FLOAT), the fatigue-aware
+**FLOAT** (cited in the paper), the fatigue-aware
 tower design-optimization framework that the `ref` tower is redesigned with.
 
 ![Tower geometry and lifetime damage](docs/figures/figure_geom_damage.png)
 
 ### Download
 
-```bash
-# Option A: download with the HF CLI (one-time)
-hf download DeCoDELab/FLOATBench --repo-type=dataset --local-dir=data
-
-# Option B: load on-the-fly from Python
-python -c "from datasets import load_dataset; \
-  ds = load_dataset('DeCoDELab/FLOATBench', 'ref'); print(ds)"
-```
+Download the dataset from the anonymized dataset link in the
+supplementary material of the paper and place the per-tower folders
+under `data/`.
 
 After this you should have `data/{ref,opt1,opt2}/{train_damage.csv,
-test_damage.csv, data.csv, metadata.json}`. See the
-[dataset README](https://huggingface.co/datasets/DeCoDELab/FLOATBench)
-for the full schema and the regime-aware split definition.
+test_damage.csv, data.csv, metadata.json}`. See the dataset README shipped with the data for the full schema and the regime-aware split definition.
 
 **Lifetime weights.** `damage_weight` is not a probability: it is the
 expected number of 600 s simulation windows a simulation represents
@@ -537,42 +512,9 @@ re-designed geometries, with rank-1 Rel L² DEL of 0.067 / 0.098
 
 ## License
 
-Code released under the [MIT License](LICENSE.txt). Dataset on
-Hugging Face is released under
+Code released under the [MIT License](LICENSE.txt). The dataset is
+released under
 [CC-BY-4.0](https://creativecommons.org/licenses/by/4.0/).
-
-
-## Citation
-
-If you use **FLOATBench** in your work, please cite:
-
-> *FLOATBench: A Dataset and Benchmark for Floating Offshore Wind
-> Turbine Tower Fatigue.*
-> João Alves Ribeiro, Bruno Alves Ribeiro, Francisco Pimenta,
-> Sérgio M. O. Tavares, Faez Ahmed. arXiv:2605.25717, 2026.
-> https://arxiv.org/abs/2605.25717
-
-<details>
-<summary>BibTeX</summary>
-
-```bibtex
-@misc{ribeiro2026floatbenchdatasetbenchmarkfloating,
-      title={FLOATBench: A Dataset and Benchmark for Floating Offshore Wind Turbine Tower Fatigue},
-      author={João Alves Ribeiro and Bruno Alves Ribeiro and Francisco Pimenta and Sérgio M. O. Tavares and Faez Ahmed},
-      year={2026},
-      eprint={2605.25717},
-      archivePrefix={arXiv},
-      primaryClass={cs.AI},
-      url={https://arxiv.org/abs/2605.25717},
-}
-```
-</details>
-
-
-## Maintenance & Support
-
-For issues, questions, or feature requests related to FLOATBench:
-[FLOATBench Issues](https://github.com/Joao97ribeiro/FLOATBench/issues).
 
 
 ## Acknowledgements

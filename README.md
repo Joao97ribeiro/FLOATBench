@@ -95,6 +95,8 @@ stage with its own `run.py` and a `--flagfile` `config.cfg`. Together
 they cover the full FLOATBench workflow, from recovering the split to
 the cross-preset benchmark figures:
 
+- [`scripts/download/`](./scripts/download) — download the dataset into
+  `data/` from its anonymized link, with a checksum check.
 - [`scripts/split/`](./scripts/split) — reproduce or customize the
   regime-aware train/test split from the grid IDs; writes the per-tower
   `train_damage.csv` / `test_damage.csv`, diagnostic plots, and
@@ -160,13 +162,16 @@ tower design-optimization framework that the `ref` tower is redesigned with.
 
 ### Download
 
-Download `dataset/FLOATBench.zip` from the anonymized link
-[https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc](https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc), unzip it, and place the
-per-tower folders under `data/`:
+One command downloads the archive from the anonymized link, checks its
+SHA-256 and unpacks it into `data/`:
 
 ```bash
-unzip FLOATBench.zip && mv FLOATBench data
+python scripts/download/run.py --flagfile=scripts/download/config.cfg
 ```
+
+(Manual alternative: download `dataset/FLOATBench.zip` from
+[https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc](https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc), unzip it, and
+`mv FLOATBench data`.)
 
 After this you should have `data/{ref,opt1,opt2}/{train_damage.csv,
 test_damage.csv, data.csv, metadata.json}`. See the dataset README shipped with the data for the full schema and the regime-aware split definition.

@@ -63,6 +63,9 @@ def build_html(html):
         <a href="#leaderboard" class="button is-rounded is-dark">
           <span class="icon"><i class="fas fa-trophy"></i></span><span>Leaderboard</span>
         </a>
+        <a href="https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc" class="button is-rounded is-dark">
+          <span class="icon"><i class="fas fa-database"></i></span><span>Download dataset</span>
+        </a>
         <a href="#findings" class="button is-rounded is-dark">
           <span class="icon"><i class="fas fa-chart-line"></i></span><span>Results</span>
         </a>

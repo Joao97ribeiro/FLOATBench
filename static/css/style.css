@@ -158,3 +158,11 @@ table.results td, table.results th { white-space: nowrap; }
 .eff-group .buttons .button { margin-bottom: 0 !important; }
 .eff-label { font-size: 0.8rem; font-weight: 600; color: var(--ink-2); }
 .eff-insight { font-size: 0.9rem; color: #2d3748; border-left: 3px solid #b02c27; padding: 0.3rem 0.8rem; margin-bottom: 0.3rem; }
+.eff-legend { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem 1rem; font-size: 0.78rem; color: var(--ink-2); margin: 0.2rem 0 0.4rem; }
+.eff-leg-item { display: flex; flex-direction: column; gap: 0.2rem; }
+.eff-leg-title { font-weight: 600; color: #333; }
+.eff-sizes { display: flex; align-items: center; gap: 0.35rem; }
+.eff-sizes i { display: inline-block; border-radius: 50%; background: #d69b99; border: 1px solid #555; }
+.eff-grad { display: block; height: 10px; width: 100%; max-width: 160px; border-radius: 2px; background: linear-gradient(90deg, #f2f2f2, #d69b99, #d06662, #b02c27, #932421, #802421); border: 1px solid #ddd; }
+.eff-grad-lab { font-size: 0.72rem; }
+@media (max-width: 768px) { .eff-legend { grid-template-columns: 1fr 1fr; } }

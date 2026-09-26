@@ -11,9 +11,9 @@
   <link rel="icon" type="image/png" href="figures/logo.png">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="static/css/style.css?v=202609252040">
+  <link rel="stylesheet" href="static/css/style.css?v=202609252044">
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <script defer src="static/js/app.js?v=202609252040"></script>
+  <script defer src="static/js/app.js?v=202609252044"></script>
 </head>
 <body>
 
@@ -454,7 +454,15 @@ hf download DeCoDELab/FLOATBench \
     </div>
     <p class="eff-insight" id="eff-insight"></p>
     <div id="plot-efficiency" class="plot plot-tall"></div>
-    <p class="how">Lower = more accurate, left = faster to train (log scales). Size = model size on disk, colour = inference latency, shape = family. Dashed line: Pareto front.</p>
+    <div class="eff-legend">
+      <div class="eff-leg-item"><span class="eff-leg-title">Size = model size on disk</span>
+        <span class="eff-sizes"><i style="width:9px;height:9px"></i>0.1 MB <i style="width:17px;height:17px"></i>10 MB <i style="width:27px;height:27px"></i>1 GB</span></div>
+      <div class="eff-leg-item"><span class="eff-leg-title">Colour = inference latency</span>
+        <span class="eff-grad"></span><span class="eff-grad-lab">1 → 1000 µs per row</span></div>
+      <div class="eff-leg-item"><span class="eff-leg-title">Shape = model family</span><span>legend under the axis</span></div>
+      <div class="eff-leg-item"><span class="eff-leg-title">Dashed line = Pareto front</span><span>nothing is both faster to train and more accurate</span></div>
+    </div>
+    <p class="how">Lower = more accurate, left = faster to train (log scales). Hover a model for all its numbers; click it to select it in the table.</p>
   </div>
 </section>
 

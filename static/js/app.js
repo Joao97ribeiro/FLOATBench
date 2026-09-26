@@ -218,8 +218,31 @@ async function datasetFromHF() {
   return { data: { sims, n_sections: nSections, towers }, damage };
 }
 
+// Compact damage encoding of the anonymized copy: two characters per
+// value from a vowel-free alphabet, log10 damage = lo + code * step.
+const B52 = "0123456789bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ";
+
+function decodeCompact(str, lo, step) {
+  const idx = {};
+  for (let k = 0; k < B52.length; k++) idx[B52[k]] = k;
+  const out = new Float32Array(str.length / 2);
+  for (let i = 0; i < out.length; i++) {
+    out[i] = lo + (idx[str[2 * i]] * 52 + idx[str[2 * i + 1]]) * step;
+  }
+  return out;
+}
+
 async function bundledDataset() {
-  const data = window.FB_DATA ? window.FB_DATA.dataset : await fetch("static/data/dataset.json?v=202609252106").then((r) => r.json());
+  if (window.FB_DATA && window.FB_DMG) {
+    const data = window.FB_DATA.dataset;
+    const damage = {};
+    TOWERS.forEach((tw) => {
+      const t = data.towers[tw];
+      damage[tw] = decodeCompact(window.FB_DMG[tw], t.dmg_lo, t.dmg_step);
+    });
+    return { data, damage };
+  }
+  const data = window.FB_DATA ? window.FB_DATA.dataset : await fetch("static/data/dataset.json?v=202609252130").then((r) => r.json());
   const damage = {};
   TOWERS.forEach((tw) => { damage[tw] = decodeDamage(data.towers[tw].log_damage_i16); });
   return { data, damage };
@@ -1000,7 +1023,7 @@ async function main() {
   initNav();
   initHF();
   watchTheme();
-  const lbReady = (window.FB_DATA ? Promise.resolve(window.FB_DATA.leaderboard) : fetch("static/data/leaderboard.json?v=202609252106").then((r) => r.json())).then((lb) => {
+  const lbReady = (window.FB_DATA ? Promise.resolve(window.FB_DATA.leaderboard) : fetch("static/data/leaderboard.json?v=202609252130").then((r) => r.json())).then((lb) => {
     state.lb = lb;
     initLeaderboard();
   });

@@ -7,7 +7,8 @@ Run from the root of the `gh-pages` branch after any change to the site:
 The copy drops everything that identifies the authors (names,
 affiliations, e-mails, preprint, citation, repository and dataset links,
 the live Hugging Face sections) and embeds the data in
-`review/static/data/data.js`, so the page works inside the sandboxed
+`review/static/data/*.js` (compact, split per tower), so the page
+works inside the sandboxed
 viewer of anonymous.4open.science, where `fetch()` of sibling files is
 blocked. The script fails if an identifying term survives.
 """
@@ -21,6 +22,7 @@ import re
 import shutil
 
 SITE = pathlib.Path(__file__).resolve().parents[1]
+B52 = "0123456789bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
 OUT = SITE / "review"
 FIGURES = [
     "logo.png", "overview.png", "simulation_pipeline.png",
@@ -105,8 +107,16 @@ def build_html(html):
         html,
         flags=re.S)
     # Embedded data before the app script.
+    scripts = "".join(f'<script src="static/data/{f}.js"></script>\n  '
+                      for f in ("data", "damage_ref", "damage_opt1",
+                                "damage_opt2"))
     html = re.sub(r'(<script defer src="static/js/app\.js[^"]*"></script>)',
-                  r'<script src="static/data/data.js"></script>\n  \1', html)
+                  lambda m: scripts + m.group(1), html)
+    # The public page sends visitors of the anonymized mirror here.
+    html = re.sub(r"<script>/\* anon-redirect \*/.*?</script>\n",
+                  "",
+                  html,
+                  flags=re.S)
     return html
 
 
@@ -122,6 +132,30 @@ def check(path, text):
     hits = [t for t in FORBIDDEN if t in low]
     if hits:
         raise SystemExit(f"{path}: identifying terms left: {hits}")
+
+
+def compact_damage(towers):
+    """Per-tower damage scripts: 2 vowel-free characters per value.
+
+    The anonymizer rewrites every served text file (term replacement) and
+    times out on one large file; small files without vowels are served
+    quickly and can never match a (vowel-bearing) term. Modifies `towers`
+    in place (drops the base64 field, adds the decoding parameters).
+    """
+    out = {}
+    for name, tower in towers.items():
+        vals = [
+            v / 1000 for v in array.array(
+                "h", base64.b64decode(tower.pop("log_damage_i16")))
+        ]
+        lo, hi = min(vals), max(vals)
+        step = (hi - lo) / (52 * 52 - 1)
+        codes = [round((v - lo) / step) for v in vals]
+        tower["dmg_lo"], tower["dmg_step"] = lo, step
+        enc = "".join(B52[c // 52] + B52[c % 52] for c in codes)
+        out[name] = ("window.FB_DMG = window.FB_DMG || {};\n"
+                     f'window.FB_DMG.{name} = "{enc}";\n')
+    return out
 
 
 def main():
@@ -141,16 +175,14 @@ def main():
             json.loads((SITE / "static" / "data" / f"{name}.json").read_text())
         for name in ("dataset", "leaderboard")
     }
-    # Plain integers instead of base64: no letters that the term
-    # replacement of the anonymizer could hit inside the encoded data.
-    for tower in data["dataset"]["towers"].values():
-        raw = base64.b64decode(tower["log_damage_i16"])
-        tower["log_damage_i16"] = array.array("h", raw).tolist()
+    dmg_js = compact_damage(data["dataset"]["towers"])
     datajs = "window.FB_DATA = " + json.dumps(data,
                                               separators=(",", ":")) + ";\n"
-    for path, text in (("index.html", html), ("static/js/app.js", js),
-                       ("static/css/style.css", css), ("static/data/data.js",
-                                                       datajs)):
+    files = [("index.html", html), ("static/js/app.js", js),
+             ("static/css/style.css", css), ("static/data/data.js", datajs)]
+    files += [(f"static/data/damage_{name}.js", text)
+              for name, text in dmg_js.items()]
+    for path, text in files:
         check(path, text)
         (OUT / path).write_text(text)
     for fig in FIGURES:

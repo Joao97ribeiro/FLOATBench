@@ -29,17 +29,20 @@
         FLOATBench: A Tabular Dataset and Benchmark for Fatigue Prediction on Floating Offshore Wind Turbine Towers
       </h1>
       <div class="publication-links" style="margin-top:1.5rem;">
+        <a href="https://anonymous.4open.science/r/FLOATBench-84A1/" class="button is-rounded is-dark">
+          <span class="icon"><i class="fas fa-code"></i></span><span>Code</span>
+        </a>
+        <a href="https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc" class="button is-rounded is-dark">
+          <span class="icon"><i class="fas fa-database"></i></span><span>Data</span>
+        </a>
+        <a href="#start" class="button is-rounded is-dark">
+          <span class="icon"><i class="fas fa-download"></i></span><span>Get started</span>
+        </a>
         <a href="#explorer" class="button is-rounded is-dark">
           <span class="icon"><i class="fas fa-cube"></i></span><span>Dataset explorer</span>
         </a>
         <a href="#leaderboard" class="button is-rounded is-dark">
           <span class="icon"><i class="fas fa-trophy"></i></span><span>Leaderboard</span>
-        </a>
-        <a href="https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc" class="button is-rounded is-dark">
-          <span class="icon"><i class="fas fa-database"></i></span><span>Download dataset</span>
-        </a>
-        <a href="#findings" class="button is-rounded is-dark">
-          <span class="icon"><i class="fas fa-chart-line"></i></span><span>Results</span>
         </a>
       </div>
     </div>
@@ -248,7 +251,7 @@
 
 
 <!-- ============ BENCHMARK PROTOCOL ============ -->
-<section class="section has-background-light" id="split">
+<section class="section" id="split">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Benchmark Protocol</h2>
     <h3 class="title is-5">Regime-aware partition</h3>
@@ -297,7 +300,7 @@
 </section>
 
 <!-- ============ LEADERBOARD ============ -->
-<section class="section" id="leaderboard">
+<section class="section has-background-light" id="leaderboard">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Leaderboard</h2>
     <p class="subtitle is-6">Within-tower benchmark (E2): every surrogate of the AutoGluon <code>best</code> and <code>extreme</code> pools, scored by relative L² error on the damage equivalent load (Rel L² DEL, lower is better). Switch the regime to see how the ranking changes when only extrapolation points count (EX_EX = test points outside the training data in both wind and waves; see <a href="#dataset">Terms used on this page</a>). Click a row to see its error across the nine regime cells.</p>
@@ -380,7 +383,7 @@
 </section>
 
 <!-- ============ RESULTS ============ -->
-<section class="section has-background-light" id="findings">
+<section class="section" id="findings">
   <div class="container is-max-desktop">
     <h2 class="title is-3">Results</h2>
 
@@ -455,7 +458,7 @@
 </section>
 
 <!-- ============ MORE RESULTS ============ -->
-<section class="section">
+<section class="section has-background-light">
   <div class="container is-max-desktop">
     <h2 class="title is-3">More Results from the Paper</h2>
     <p class="subtitle is-6">Figures from the appendix of the paper. Click a figure to open it at full size.</p>
@@ -506,6 +509,46 @@
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- ============ GET STARTED ============ -->
+<section class="section" id="start">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Get Started</h2>
+    <div class="columns">
+      <div class="column is-half">
+        <div class="box">
+          <p class="title is-5"><i class="fas fa-code"></i> &nbsp;<a href="https://anonymous.4open.science/r/FLOATBench-84A1/">Code (anonymized)</a></p>
+          <p>Evaluation harness, regime-aware splitter, leaderboards and every analysis of the paper. Browse it online or <a href="https://anonymous.4open.science/api/repo/FLOATBench-84A1/zip">download it as a zip</a>.</p>
+        </div>
+      </div>
+      <div class="column is-half">
+        <div class="box">
+          <p class="title is-5"><i class="fas fa-database"></i> &nbsp;<a href="https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc">Data (anonymized)</a></p>
+          <p>The released CSVs of the three towers (<code>dataset/FLOATBench.zip</code>, 25.6 MB, with a README of the schema and split) and the raw time-series audit subset. <a href="https://osf.io/download/6ab722cf8c24072987b0bede/?view_only=224887b50912448b871620b3ef96cefc">Direct download of the dataset</a>.</p>
+        </div>
+      </div>
+    </div>
+    <p class="has-text-weight-semibold" style="margin-bottom:0.4rem;">Download and run the benchmark</p>
+<pre><code># 1. code
+curl -L -o code.zip "https://anonymous.4open.science/api/repo/FLOATBench-84A1/zip"
+unzip code.zip -d FLOATBench &amp;&amp; cd FLOATBench
+conda env create -f environment.yml &amp;&amp; conda activate floatbench
+
+# 2. data, into data/{ref,opt1,opt2}/
+curl -L -o FLOATBench.zip "https://osf.io/download/6ab722cf8c24072987b0bede/?view_only=224887b50912448b871620b3ef96cefc"
+unzip FLOATBench.zip &amp;&amp; mv FLOATBench data
+
+# 3. smoke test (~10 min on one GPU), then the full E2 + E3 benchmark
+python scripts/run_benchmark.py --experiment=within --tower=ref --time_limit=120
+python scripts/run_benchmark.py --experiment=all</code></pre>
+    <p class="has-text-weight-semibold" style="margin:1rem 0 0.4rem;">Or just look at the data</p>
+<pre><code>import pandas as pd
+
+test = pd.read_csv("data/ref/test_damage.csv")
+ex_ex = test[(test.wind_group == "Extrapolate") &amp; (test.wave_group == "Extrapolate")]
+print(len(test), "test rows,", ex_ex.sim_id.nunique(), "EX_EX simulations")</code></pre>
   </div>
 </section>
 

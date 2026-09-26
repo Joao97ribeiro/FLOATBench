@@ -23,6 +23,11 @@ import shutil
 
 SITE = pathlib.Path(__file__).resolve().parents[1]
 B52 = "0123456789bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ"
+CODE_URL = "https://anonymous.4open.science/r/FLOATBench-84A1/"
+CODE_ZIP = "https://anonymous.4open.science/api/repo/FLOATBench-84A1/zip"
+DATA_URL = "https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc"
+DATA_ZIP = ("https://osf.io/download/6ab722cf8c24072987b0bede/"
+            "?view_only=224887b50912448b871620b3ef96cefc")
 OUT = SITE / "review"
 FIGURES = [
     "logo.png", "overview.png", "simulation_pipeline.png",
@@ -36,6 +41,48 @@ FORBIDDEN = [
     "mit.edu", "delft", "brown univ", "porto", "aveiro", "2605.25717", "arxiv",
     "github.io", "github.com/joao97", "iclr", "neurips", "openreview"
 ]
+
+START = f'''<!-- ============ GET STARTED ============ -->
+<section class="section" id="start">
+  <div class="container is-max-desktop">
+    <h2 class="title is-3">Get Started</h2>
+    <div class="columns">
+      <div class="column is-half">
+        <div class="box">
+          <p class="title is-5"><i class="fas fa-code"></i> &nbsp;<a href="{CODE_URL}">Code (anonymized)</a></p>
+          <p>Evaluation harness, regime-aware splitter, leaderboards and every analysis of the paper. Browse it online or <a href="{CODE_ZIP}">download it as a zip</a>.</p>
+        </div>
+      </div>
+      <div class="column is-half">
+        <div class="box">
+          <p class="title is-5"><i class="fas fa-database"></i> &nbsp;<a href="{DATA_URL}">Data (anonymized)</a></p>
+          <p>The released CSVs of the three towers (<code>dataset/FLOATBench.zip</code>, 25.6 MB, with a README of the schema and split) and the raw time-series audit subset. <a href="{DATA_ZIP}">Direct download of the dataset</a>.</p>
+        </div>
+      </div>
+    </div>
+    <p class="has-text-weight-semibold" style="margin-bottom:0.4rem;">Download and run the benchmark</p>
+<pre><code># 1. code
+curl -L -o code.zip "{CODE_ZIP}"
+unzip code.zip -d FLOATBench &amp;&amp; cd FLOATBench
+conda env create -f environment.yml &amp;&amp; conda activate floatbench
+
+# 2. data, into data/{{ref,opt1,opt2}}/
+curl -L -o FLOATBench.zip "{DATA_ZIP}"
+unzip FLOATBench.zip &amp;&amp; mv FLOATBench data
+
+# 3. smoke test (~10 min on one GPU), then the full E2 + E3 benchmark
+python scripts/run_benchmark.py --experiment=within --tower=ref --time_limit=120
+python scripts/run_benchmark.py --experiment=all</code></pre>
+    <p class="has-text-weight-semibold" style="margin:1rem 0 0.4rem;">Or just look at the data</p>
+<pre><code>import pandas as pd
+
+test = pd.read_csv("data/ref/test_damage.csv")
+ex_ex = test[(test.wind_group == "Extrapolate") &amp; (test.wave_group == "Extrapolate")]
+print(len(test), "test rows,", ex_ex.sim_id.nunique(), "EX_EX simulations")</code></pre>
+  </div>
+</section>
+
+'''
 
 
 def cut(html, start, end):
@@ -56,18 +103,21 @@ def build_html(html):
     # Hero: no authors, affiliations or external buttons.
     i = html.index('      <div class="is-size-5 publication-authors">')
     j = html.index("    </div>\n  </div>\n</section>", i)
-    html = html[:i] + '''      <div class="publication-links" style="margin-top:1.5rem;">
+    html = html[:i] + f'''      <div class="publication-links" style="margin-top:1.5rem;">
+        <a href="{CODE_URL}" class="button is-rounded is-dark">
+          <span class="icon"><i class="fas fa-code"></i></span><span>Code</span>
+        </a>
+        <a href="{DATA_URL}" class="button is-rounded is-dark">
+          <span class="icon"><i class="fas fa-database"></i></span><span>Data</span>
+        </a>
+        <a href="#start" class="button is-rounded is-dark">
+          <span class="icon"><i class="fas fa-download"></i></span><span>Get started</span>
+        </a>
         <a href="#explorer" class="button is-rounded is-dark">
           <span class="icon"><i class="fas fa-cube"></i></span><span>Dataset explorer</span>
         </a>
         <a href="#leaderboard" class="button is-rounded is-dark">
           <span class="icon"><i class="fas fa-trophy"></i></span><span>Leaderboard</span>
-        </a>
-        <a href="https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc" class="button is-rounded is-dark">
-          <span class="icon"><i class="fas fa-database"></i></span><span>Download dataset</span>
-        </a>
-        <a href="#findings" class="button is-rounded is-dark">
-          <span class="icon"><i class="fas fa-chart-line"></i></span><span>Results</span>
         </a>
       </div>
 ''' + html[j:]
@@ -75,6 +125,9 @@ def build_html(html):
     html = cut(html,
                '    <div class="has-text-centered" style="margin:0 0 1.5rem;',
                "    </div>\n\n")
+    # Get started: anonymized code and data, with commands.
+    html = html.replace("<!-- ============ SCOPE ============ -->",
+                        START + "<!-- ============ SCOPE ============ -->", 1)
     # Sections that link to identifying resources.
     for name in ("LIVE ROWS", "RESOURCES", "CITATION"):
         html = section(html, name)
@@ -109,6 +162,7 @@ def build_html(html):
         'the Academic Project Page Template.</p>\n  </div>\n</footer>',
         html,
         flags=re.S)
+    html = alternate_backgrounds(html)
     # Embedded data before the app script.
     scripts = "".join(f'<script src="static/data/{f}.js"></script>\n  '
                       for f in ("data", "damage_ref", "damage_opt1",
@@ -121,6 +175,20 @@ def build_html(html):
                   html,
                   flags=re.S)
     return html
+
+
+def alternate_backgrounds(html):
+    """White / light-grey alternation of the sections after the hero."""
+    count = [0]
+
+    def repl(_match):
+        light = count[0] % 2 == 1
+        count[0] += 1
+        return ('<section class="section has-background-light"'
+                if light else '<section class="section"')
+
+    return re.sub(r'<section class="section(?: has-background-light)?"', repl,
+                  html)
 
 
 def build_js(js):

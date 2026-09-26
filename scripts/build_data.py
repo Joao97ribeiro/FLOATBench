@@ -155,7 +155,7 @@ def leaderboard(root, bench_dir, models_dir):
                 "sec1": round(float(row["Rel_L2 section_1"]), 5),
                 "sec30": round(float(row["Rel_L2 section_30"]), 5),
                 "rel_l2": {
-                    g: round(float(row[f"Rel_L2 {g}"]), 5) for g in REGIMES
+                    g: round(float(row[f"Rel_L2 {g}"]), 6) for g in REGIMES
                 },
             })
         out[tower] = rows

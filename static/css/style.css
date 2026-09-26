@@ -151,3 +151,4 @@ table.schema th.num, table.schema td.num { text-align: right; font-variant-numer
 .result-tag { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: #c05621; margin-bottom: 0.3rem; }
 .takeaway { border-left: 3px solid #294366; padding: 0.5rem 0.9rem; background: #f5f7fa; font-style: italic; color: #2d3748; }
 table.results td, table.results th { white-space: nowrap; }
+.takeaway-live { border-left: 3px solid #b02c27; background: #f5f7fa !important; color: #2d3748; padding: 0.7rem 1rem; font-size: 0.92rem; }

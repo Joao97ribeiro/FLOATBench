@@ -443,20 +443,20 @@ hf download DeCoDELab/FLOATBench \
     <p class="is-size-7 has-text-grey">Point estimates on the full test set. Condition-level bootstrap intervals are produced by <code>scripts/leaderboard/</code>. Rank changes are relative to the Global ranking of the same pool.</p>
 
     <h3 class="title is-5" style="margin-top:2.5rem;">Accuracy vs cost</h3>
-    <div class="columns is-vcentered">
+    <p class="is-size-6" style="margin-bottom:0.8rem;">Is the more accurate model also the more expensive one? Each bubble is a model of the tower and regime chosen above: error on the vertical axis (lower is better), cost on the horizontal axis (left is cheaper), bubble size = model size on disk.</p>
+    <div class="notification is-light takeaway-live" id="eff-insight"></div>
+    <div class="columns">
       <div class="column is-8">
+        <div class="buttons has-addons" id="eff-x" style="margin-bottom:0.25rem;">
+          <button type="button" class="button is-small is-dark is-selected" data-x="latency_ms">Inference latency</button>
+          <button type="button" class="button is-small" data-x="train_s">Training time</button>
+        </div>
         <div id="plot-efficiency" class="plot plot-tall"></div>
       </div>
       <div class="column is-4">
-        <label class="label is-small" for="eff-x">Cost on the horizontal axis</label>
-        <div class="select is-fullwidth is-small" style="margin-bottom:1rem;">
-          <select id="eff-x">
-            <option value="train_s">Training time</option>
-            <option value="latency_ms">Inference latency per row</option>
-            <option value="size_mb">Model size on disk</option>
-          </select>
-        </div>
-        <p class="how"><strong>How to read.</strong> One point per model of the selected tower, with its error in the regime chosen above (lower is better) against its cost (left is cheaper, log scale). The dashed line is the Pareto front: no other model is both cheaper and more accurate. Switch the regime to EX_EX to see which models stay efficient in extrapolation. Training time is the AutoGluon fit time on one GPU workstation; for stacked models (L2, L3) and the weighted ensemble it includes their base models, while the size on disk counts only the model itself. Bagged RandomForest and ExtraTrees are fit once with out-of-bag estimates, so they train in seconds.</p>
+        <p class="is-size-7 has-text-weight-semibold" style="margin-bottom:0.3rem;">Pareto-optimal models <span class="has-text-grey has-text-weight-normal">(no model is both cheaper and more accurate)</span></p>
+        <div class="table-container"><table class="table is-narrow is-fullwidth data" id="eff-front"></table></div>
+        <p class="how">Log scales on both axes. Training time is the AutoGluon fit time on one GPU workstation; for stacked models (L2, L3) and the weighted ensemble it includes their base models. Bagged RandomForest and ExtraTrees are fit once with out-of-bag estimates, so they train in seconds.</p>
       </div>
     </div>
   </div>

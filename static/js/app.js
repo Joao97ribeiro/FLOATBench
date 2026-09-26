@@ -698,17 +698,38 @@ function fmtSize(mb) {
 }
 
 const EFF_AXIS = {
-  train_s: { title: "Training time [s] (log)", fmt: (v) => `${(v / 60).toFixed(1)} min` },
+  train_s: { title: "Training time [s] (log)", fmt: (v) => fmtTime(v) },
   latency_ms: { title: "Inference latency [ms per row] (log)", fmt: (v) => `${(v * 1000).toFixed(1)} µs/row` },
-  size_mb: { title: "Model size on disk [MB] (log)", fmt: (v) => `${fmtSize(v)} MB` },
 };
+
+function fmtTime(sec) {
+  if (sec < 60) return `${sec.toFixed(1)} s`;
+  if (sec < 3600) return `${(sec / 60).toFixed(1)} min`;
+  return `${(sec / 3600).toFixed(1)} h`;
+}
+
+function paretoFront(rows, key, regime) {
+  const sorted = rows.slice().sort((a, b) => a[key] - b[key]);
+  const front = [];
+  let best = Infinity;
+  for (const r of sorted) {
+    if (r.rel_l2[regime] < best) { best = r.rel_l2[regime]; front.push(r); }
+  }
+  return front;
+}
+
+function effKey() {
+  const on = document.querySelector("#eff-x button.is-selected");
+  return on ? on.dataset.x : "latency_ms";
+}
 
 function drawEfficiency() {
   const t = theme();
   const { tower, regime, rows } = lbRows();
-  const key = document.getElementById("eff-x").value;
+  const key = effKey();
   const ax = EFF_AXIS[key];
   const valid = rows.filter((r) => r[key] > 0 && state.families.has(r.family));
+  const bubble = (r) => 6 + 4 * Math.log10(1 + Math.max(r.size_mb || 0, 0.01) * 10);
   const traces = [];
   for (const fam of FAMILIES) {
     const rs = valid.filter((r) => r.family === fam);
@@ -717,18 +738,13 @@ function drawEfficiency() {
       type: "scatter", mode: "markers", name: fam,
       x: rs.map((r) => r[key]), y: rs.map((r) => r.rel_l2[regime]),
       customdata: rs.map(modelKey),
-      text: rs.map((r) => `${shortName(r.model)} (${r.preset})<br>${regime} Rel L² ${r.rel_l2[regime].toFixed(4)}<br>${ax.fmt(r[key])}`),
+      text: rs.map((r) => `${shortName(r.model)} (${r.preset})<br>${regime} Rel L² ${r.rel_l2[regime].toFixed(4)}`
+        + `<br>train ${fmtTime(r.train_s)} · ${(r.latency_ms * 1000).toFixed(1)} µs/row · ${fmtSize(r.size_mb)} MB`),
       hovertemplate: "%{text}<extra></extra>",
-      marker: { size: 8, color: t.family[fam], opacity: 0.85, line: { width: 0 } },
+      marker: { size: rs.map(bubble), color: t.family[fam], opacity: 0.75, line: { width: 0.5, color: "#ffffff" } },
     });
   }
-  // Pareto front: sweep by cost, keep each new minimum error.
-  const sorted = valid.slice().sort((a, b) => a[key] - b[key]);
-  const front = [];
-  let best = Infinity;
-  for (const r of sorted) {
-    if (r.rel_l2[regime] < best) { best = r.rel_l2[regime]; front.push(r); }
-  }
+  const front = paretoFront(valid, key, regime);
   traces.unshift({
     type: "scatter", mode: "lines", hoverinfo: "skip", showlegend: false,
     x: front.map((r) => r[key]), y: front.map((r) => r.rel_l2[regime]),
@@ -739,16 +755,30 @@ function drawEfficiency() {
     traces.push({
       type: "scatter", mode: "markers", hoverinfo: "skip", showlegend: false,
       x: [sel[key]], y: [sel.rel_l2[regime]],
-      marker: { size: 16, color: "rgba(0,0,0,0)", line: { color: t.ink, width: 2 } },
+      marker: { size: bubble(sel) + 10, color: "rgba(0,0,0,0)", line: { color: t.ink, width: 2 } },
     });
   }
+  // Label three models: cheapest on the front, most accurate, Global rank-1.
+  const globalTop = rows.slice().sort((a, b) => a.rel_l2.Global - b.rel_l2.Global)[0];
+  const marks = [
+    [front[0], "cheapest"],
+    [front[front.length - 1], `best ${regime}`],
+    [globalTop, "Global rank-1"],
+  ].filter(([r], k, arr) => r && r[key] > 0 && arr.findIndex(([q]) => q === r) === k);
+  const annotations = marks.map(([r, tag], k) => ({
+    x: Math.log10(r[key]), y: Math.log10(r.rel_l2[regime]),
+    text: `${shortName(r.model)}<br><span style="color:${t.ink3}">${tag}</span>`,
+    showarrow: true, arrowhead: 0, arrowwidth: 0.8, arrowcolor: t.ink3,
+    ax: [-40, 30, 30][k], ay: [-36, 34, -40][k],
+    font: { size: 10, color: t.ink }, bgcolor: "rgba(255,255,255,0.9)", align: "left",
+  }));
   render("plot-efficiency", traces, baseLayout(t, {
-    title: { text: `${TOWER_LABEL[tower]}: ${regime} error vs cost`, font: { size: 13, color: t.ink }, x: 0.02, xanchor: "left" },
     xaxis: axis(t, ax.title, { type: "log", exponentformat: "power" }),
-    yaxis: axis(t, `Rel L² DEL, ${regime}`),
+    yaxis: axis(t, `Rel L² DEL, ${regime} (log)`, { type: "log", exponentformat: "none", tickformat: ".2f" }),
     showlegend: true,
     legend: { orientation: "h", x: 0, y: -0.2, font: { color: t.ink2, size: 11 } },
-    margin: { l: 60, r: 16, t: 36, b: 90 },
+    margin: { l: 64, r: 16, t: 12, b: 90 },
+    annotations,
   }));
   const el = document.getElementById("plot-efficiency");
   if (!el._clickBound) {
@@ -757,6 +787,29 @@ function drawEfficiency() {
       if (p && p.customdata) { state.lbSel = p.customdata; drawLeaderboard(); }
     });
     el._clickBound = true;
+  }
+
+  // Pareto table.
+  document.getElementById("eff-front").innerHTML =
+    `<thead><tr><th class="l">Model</th><th>${key === "train_s" ? "Train" : "µs/row"}</th><th>Rel L²</th></tr></thead><tbody>`
+    + front.map((r) => `<tr data-key="${modelKey(r)}" style="cursor:pointer"><td class="l mono"><span class="fam-dot" style="background:${t.family[r.family]}"></span>${shortName(r.model)}</td>`
+      + `<td>${key === "train_s" ? fmtTime(r.train_s) : (r.latency_ms * 1000).toFixed(1)}</td><td>${r.rel_l2[regime].toFixed(4)}</td></tr>`).join("")
+    + "</tbody>";
+  document.querySelectorAll("#eff-front tbody tr").forEach((tr) =>
+    tr.addEventListener("click", () => { state.lbSel = tr.dataset.key; drawLeaderboard(); }));
+
+  // One-line takeaway: best model in this regime vs the Global rank-1.
+  const bestR = rows.slice().sort((a, b) => a.rel_l2[regime] - b.rel_l2[regime])[0];
+  const globalR = rows.slice().sort((a, b) => a.rel_l2.Global - b.rel_l2.Global)[0];
+  const cost = (r) => `trains in ${fmtTime(r.train_s)} and predicts in ${(r.latency_ms * 1000).toFixed(1)} µs/row`;
+  const box = document.getElementById("eff-insight");
+  if (regime === "Global" || modelKey(bestR) === modelKey(globalR)) {
+    box.innerHTML = `<strong>${TOWER_LABEL[tower]}, ${regime}:</strong> the most accurate model, <code>${shortName(bestR.model)}</code> (Rel L² ${bestR.rel_l2[regime].toFixed(3)}), ${cost(bestR)}.`;
+  } else {
+    const ratio = globalR.train_s / bestR.train_s;
+    box.innerHTML = `<strong>${TOWER_LABEL[tower]}, ${regime}:</strong> the most accurate model, <code>${shortName(bestR.model)}</code> (Rel L² ${bestR.rel_l2[regime].toFixed(3)}), ${cost(bestR)}. `
+      + `The Global rank-1 <code>${shortName(globalR.model)}</code> reaches ${globalR.rel_l2[regime].toFixed(3)} here and ${cost(globalR)}`
+      + (ratio > 2 ? `: ${Math.round(ratio)}× more training time for ${(globalR.rel_l2[regime] / bestR.rel_l2[regime]).toFixed(1)}× the error.` : ".");
   }
 }
 
@@ -841,7 +894,14 @@ function initLeaderboard() {
     c.setAttribute("aria-pressed", state.families.has(f));
     drawLeaderboard();
   }));
-  document.getElementById("eff-x").addEventListener("change", drawEfficiency);
+  document.querySelectorAll("#eff-x button").forEach((btn) => btn.addEventListener("click", () => {
+    document.querySelectorAll("#eff-x button").forEach((b) => {
+      const on = b === btn;
+      b.classList.toggle("is-dark", on);
+      b.classList.toggle("is-selected", on);
+    });
+    drawEfficiency();
+  }));
   ["lb-tower", "lb-regime", "lb-n"].forEach((id) =>
     document.getElementById(id).addEventListener("change", drawLeaderboard));
   document.getElementById("lb-search").addEventListener("input", drawLeaderboard);

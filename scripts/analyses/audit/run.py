@@ -9,8 +9,9 @@ level, turbulence seed S1):
 * ``signals/<tower>/sim_<id>.out``: raw OpenFAST outputs (v3.5.2, double
   precision), byte-identical to the campaign outputs;
 * ``labels/<tower>_audit_labels.csv``: the released per-section labels;
-* ``geometry/tower_<tower>.json``: the tower geometries;
-* ``code/openfast/``: the released post-processing pipeline.
+* ``geometry/tower_<tower>.json``: the tower geometries.
+
+The released post-processing pipeline is ``floatbench/openfast``.
 
 For each of the 147 simulations the runner reruns the pipeline (fore-aft
 bending moment -> stress -> rainflow -> DNV-RP-C203 curve E, bilinear,
@@ -34,12 +35,13 @@ from __future__ import annotations
 
 import os
 import shutil
-import sys
 import tempfile
 
 from absl import app, flags, logging
 import numpy as np
 import pandas as pd
+
+from floatbench.openfast import Tower, TowerFatigueAnalysis
 
 FLAGS = flags.FLAGS
 
@@ -108,9 +110,6 @@ def _audit_tower(package_dir: str, tower: str, analysis_cls,
 def main(_) -> None:
     """Runs the audit over the towers and logs the deviations."""
     package_dir = os.path.abspath(FLAGS.package_dir)
-    sys.path.insert(0, os.path.join(package_dir, "code"))
-    # pylint: disable=import-outside-toplevel,import-error,no-name-in-module
-    from openfast.openfast_fatigue_analysis import (Tower, TowerFatigueAnalysis)
 
     worst = 0.0
     for tower in FLAGS.towers:

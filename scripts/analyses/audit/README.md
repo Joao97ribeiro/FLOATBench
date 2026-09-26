@@ -18,7 +18,11 @@ dataset (about 1.4 GB, CC-BY-4.0); this folder holds its runner.
   dataset files.
 - `geometry/tower_<tower>.json`: the public tower geometries used for the
   moment-to-stress conversion.
-- `code/openfast/`: the released post-processing pipeline code.
+The released post-processing pipeline itself is in this repository,
+[`floatbench/openfast/`](../../../floatbench/openfast); the package holds
+the data only. Download it (folder `audit_package/`) from the anonymized
+data link
+<https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc>.
 
 ## Subset composition (fixed, deterministic)
 

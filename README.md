@@ -19,8 +19,8 @@ tower fatigue. It pairs **582,120 section-level fatigue damage
 labels** across three 22 MW floating-tower geometries with a
 **regime-aware evaluation protocol** that stratifies test points into
 in-train, interpolation, and extrapolation regions of the joint
-wind/wave operating envelope. The dataset is available through the
-anonymized dataset link in the supplementary material of the paper;
+wind/wave operating envelope. The dataset is available through an
+anonymized link: [https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc](https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc);
 this repository contains the benchmark code, evaluation harness, and
 scripts to reproduce the paper results.
 
@@ -143,8 +143,8 @@ pip install -r requirements.txt
 ## Dataset
 
 The released CSVs, schema, and per-tower layout are documented in
-the dataset README that ships with the anonymized dataset (link in
-the supplementary material of the paper).
+the dataset README that ships with the anonymized dataset
+([anonymized link](https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc), folder `dataset/`).
 
 The three towers are:
 
@@ -160,9 +160,13 @@ tower design-optimization framework that the `ref` tower is redesigned with.
 
 ### Download
 
-Download the dataset from the anonymized dataset link in the
-supplementary material of the paper and place the per-tower folders
-under `data/`.
+Download `dataset/FLOATBench.zip` from the anonymized link
+[https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc](https://osf.io/te9na/?view_only=224887b50912448b871620b3ef96cefc), unzip it, and place the
+per-tower folders under `data/`:
+
+```bash
+unzip FLOATBench.zip && mv FLOATBench data
+```
 
 After this you should have `data/{ref,opt1,opt2}/{train_damage.csv,
 test_damage.csv, data.csv, metadata.json}`. See the dataset README shipped with the data for the full schema and the regime-aware split definition.

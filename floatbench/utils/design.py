@@ -4,9 +4,8 @@ Two quantities that matter for a fatigue check and that pointwise error
 metrics do not show:
 
 * **Non-conservative share**: fraction of predictions that under-predict
-  damage by more than a tolerance (default 10 %), restricted to a mask
-  (by default extrapolated conditions at wind speeds where damage is
-  large).
+  damage by more than a tolerance (default 10 %), on a mask of rows, or
+  the share of the damage that sits in such rows (damage-weighted).
 * **Lifetime-weighted damage error**: per tower section, the lifetime
   damage (occurrence-weighted sum over the operating envelope) computed
   with the predicted test damage, relative to the true lifetime damage.
@@ -21,14 +20,18 @@ import pandas as pd
 def nonconservative_share(y_true: np.ndarray,
                           y_pred: np.ndarray,
                           mask: np.ndarray | None = None,
-                          tol: float = 0.1) -> float:
-    """Fraction of rows with ``y_pred < (1 - tol) * y_true``.
+                          tol: float = 0.1,
+                          damage_weighted: bool = False) -> float:
+    """Share of rows with ``y_pred < (1 - tol) * y_true``.
 
     Args:
         y_true: True damage per row.
         y_pred: Predicted damage per row.
         mask: Optional boolean mask of the rows to evaluate.
         tol: Relative under-prediction tolerance.
+        damage_weighted: If True, each row counts with its true damage,
+            so the result is the share of the damage that sits in
+            under-predicted rows (no wind-speed cut needed).
 
     Returns:
         The share in [0, 1], or NaN if the mask selects no row.
@@ -39,7 +42,10 @@ def nonconservative_share(y_true: np.ndarray,
         y_true, y_pred = y_true[mask], y_pred[mask]
     if y_true.size == 0:
         return float("nan")
-    return float(np.mean(y_pred < (1.0 - tol) * y_true))
+    under = y_pred < (1.0 - tol) * y_true
+    if damage_weighted:
+        return float(np.sum(y_true * under) / np.sum(y_true))
+    return float(np.mean(under))
 
 
 def lifetime_damage(damage: np.ndarray, weights: np.ndarray,

@@ -126,9 +126,10 @@ the cross-preset benchmark figures:
   CI leaderboard tables over DEL. Confidence intervals resample whole
   operating conditions (see [Bootstrap confidence
   intervals](#bootstrap-confidence-intervals)). The global table also
-  reports two design metrics: the share of non-conservative predictions
-  (damage under-predicted by more than 10%, over all test rows and over
-  EX_EX rows at wind speeds of at least 10 m/s) and the lifetime-weighted
+  reports two design metrics: non-conservative predictions in EX_EX
+  (damage under-predicted by more than 10%: the share of the EX_EX damage
+  in such rows, and the share of EX_EX rows at wind speeds of at least
+  10 m/s; tolerance and wind cut are flags) and the lifetime-weighted
   damage error per section (critical section and worst section; with
   `--train_csv`, training rows enter with their known labels).
 - [`scripts/benchmark/`](./scripts/benchmark) — merge presets into the

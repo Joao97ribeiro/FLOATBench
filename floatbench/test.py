@@ -296,8 +296,9 @@ class AGDamagePredictor(BaseDamagePredictor):
 
         When ``damage_weight`` and ``section_id`` are in *df_test*, the
         global CSV also reports design metrics (``floatbench.utils.design``):
-        ``nonconservative_share`` (all test rows),
-        ``nonconservative_share_exex`` (EX_EX rows at or above
+        ``nonconservative_damage_share_exex`` (share of the EX_EX damage
+        in rows under-predicted by more than the tolerance),
+        ``nonconservative_share_exex`` (share of EX_EX rows at or above
         *nonconservative_min_wind*), ``lifetime_err_crit`` and
         ``lifetime_err_maxabs``.
         """
@@ -487,11 +488,13 @@ def _design_inputs(df_test: pd.DataFrame, df_train: pd.DataFrame | None,
     if not {"damage_weight", "section_id"} <= set(df_test.columns):
         logging.info("Design metrics skipped (no damage_weight/section_id).")
         return None
-    mask = None
+    mask_ex, mask_hw = None, None
     if "wind_wave_group" in df_test.columns:
-        mask = (df_test["wind_wave_group"] == "Extrapolate_Extrapolate").values
+        mask_ex = (
+            df_test["wind_wave_group"] == "Extrapolate_Extrapolate").values
+        mask_hw = mask_ex.copy()
         if "wind_speed" in df_test.columns:
-            mask &= (df_test["wind_speed"] >= min_wind).values
+            mask_hw &= (df_test["wind_speed"] >= min_wind).values
     train_life = None
     if df_train is not None and {"damage", "damage_weight", "section_id"
                                 } <= set(df_train.columns):
@@ -501,7 +504,8 @@ def _design_inputs(df_test: pd.DataFrame, df_train: pd.DataFrame | None,
     return {
         "weights": df_test["damage_weight"].values,
         "sections": df_test["section_id"].values,
-        "mask_exex": mask,
+        "mask_exex": mask_ex,
+        "mask_exex_highwind": mask_hw,
         "train_life": train_life,
     }
 
@@ -521,13 +525,16 @@ def _design_row(design: dict | None, y_true: np.ndarray, y_pred: np.ndarray,
     """
     if design is None:
         return {}
-    row = {
-        "nonconservative_share":
-            design_utils.nonconservative_share(y_true, y_pred, tol=tol),
-    }
+    row = {}
     if design["mask_exex"] is not None:
+        row["nonconservative_damage_share_exex"] = (
+            design_utils.nonconservative_share(y_true,
+                                               y_pred,
+                                               design["mask_exex"],
+                                               tol=tol,
+                                               damage_weighted=True))
         row["nonconservative_share_exex"] = design_utils.nonconservative_share(
-            y_true, y_pred, design["mask_exex"], tol=tol)
+            y_true, y_pred, design["mask_exex_highwind"], tol=tol)
     life = design_utils.lifetime_error(y_true, y_pred, design["weights"],
                                        design["sections"], design["train_life"])
     row["lifetime_err_crit"] = life["lifetime_err_crit"]

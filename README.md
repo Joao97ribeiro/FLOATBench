@@ -125,7 +125,13 @@ the cross-preset benchmark figures:
 - [`scripts/leaderboard/`](./scripts/leaderboard) — build the bootstrap
   CI leaderboard tables over DEL. Confidence intervals resample whole
   operating conditions (see [Bootstrap confidence
-  intervals](#bootstrap-confidence-intervals)).
+  intervals](#bootstrap-confidence-intervals)). The global table also
+  reports two design metrics: non-conservative predictions in EX_EX
+  (damage under-predicted by more than 10%: the share of the EX_EX damage
+  in such rows, and the share of EX_EX rows at wind speeds of at least
+  10 m/s; tolerance and wind cut are flags) and the lifetime-weighted
+  damage error per section (critical section and worst section; with
+  `--train_csv`, training rows enter with their known labels).
 - [`scripts/benchmark/`](./scripts/benchmark) — merge presets into the
   cross-preset benchmark outputs (regime heatmaps, bump chart, family
   bars, `model_pool` table).
@@ -254,7 +260,7 @@ outputs/within/ref/
 │   ├── leaderboard.csv            AG built-in leaderboard (val score)
 │   ├── leaderboard_test.csv       same leaderboard, scored on test set
 │   ├── leaderboard_test_summaries/
-│   │   ├── leaderboard_test_metrics.csv      r2 / Rel L² damage + DEL
+│   │   ├── leaderboard_test_metrics.csv      r2 / Rel L² damage + DEL, design metrics
 │   │   ├── leaderboard_test_groups.csv       per-regime metrics (IT/IP/EX × wind/wave)
 │   │   ├── leaderboard_test_sections.csv     per-section metrics (1 row per model × section)
 │   │   └── del/                              condition-level bootstrap CI95 over DEL

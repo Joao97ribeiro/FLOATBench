@@ -21,6 +21,7 @@ from autogluon.tabular import TabularPredictor
 
 from floatbench.base_predictor import (BaseDamagePredictor)
 from floatbench.utils import condition_id
+from floatbench.utils import design as design_utils
 
 
 class AGDamagePredictor(BaseDamagePredictor):
@@ -243,6 +244,9 @@ class AGDamagePredictor(BaseDamagePredictor):
         bootstrap_alpha: float = 0.05,
         max_models: int | None = None,
         bootstrap_cluster: str = "condition",
+        df_train: pd.DataFrame | None = None,
+        nonconservative_min_wind: float = 10.0,
+        nonconservative_tol: float = 0.1,
     ) -> None:
         """Generates extended leaderboard CSVs with per-group/section metrics.
 
@@ -281,6 +285,21 @@ class AGDamagePredictor(BaseDamagePredictor):
                 from ``sim_id``); ``"row"`` reproduces the original
                 row-level i.i.d. bootstrap. All models share the same
                 resamples (same seed), so paired differences are valid.
+            df_train: Optional training DataFrame. Its known labels enter
+                the lifetime damage of every section, so the lifetime
+                error covers the full operating envelope.
+            nonconservative_min_wind: Minimum wind speed (m/s) of the
+                rows used for the non-conservative share in EX_EX, where
+                fatigue damage is large.
+            nonconservative_tol: Relative under-prediction tolerance of
+                the non-conservative share.
+
+        When ``damage_weight`` and ``section_id`` are in *df_test*, the
+        global CSV also reports design metrics (``floatbench.utils.design``):
+        ``nonconservative_share`` (all test rows),
+        ``nonconservative_share_exex`` (EX_EX rows at or above
+        *nonconservative_min_wind*), ``lifetime_err_crit`` and
+        ``lifetime_err_maxabs``.
         """
 
         model_names = self.model.model_names()
@@ -313,6 +332,8 @@ class AGDamagePredictor(BaseDamagePredictor):
             else:
                 logging.warning("Bootstrap: no sim_id column, falling back "
                                 "to row-level resampling.")
+
+        design = _design_inputs(df_test, df_train, nonconservative_min_wind)
 
         has_section = "section_name" in df_test.columns
         has_groups = any(col in df_test.columns
@@ -385,6 +406,7 @@ class AGDamagePredictor(BaseDamagePredictor):
                 **{
                     f"{k}_damage": v for k, v in m_dmg.items() if k in keep
                 },
+                **_design_row(design, y_true, y_pred, nonconservative_tol),
             })
 
             # Keys reported per group/section (point estimates only).
@@ -446,6 +468,71 @@ class AGDamagePredictor(BaseDamagePredictor):
         _sort_leaderboard(out_dir)
         logging.info("Leaderboard saved to %s (%d models)", out_dir,
                      len(rows_metrics))
+
+
+def _design_inputs(df_test: pd.DataFrame, df_train: pd.DataFrame | None,
+                   min_wind: float) -> dict | None:
+    """Inputs shared by all models for the design metrics.
+
+    Args:
+        df_test: Test DataFrame.
+        df_train: Optional training DataFrame (known labels).
+        min_wind: Minimum wind speed of the EX_EX rows for the
+            non-conservative share.
+
+    Returns:
+        Dict with weights, sections, EX_EX mask and training lifetime, or
+        ``None`` if *df_test* lacks ``damage_weight`` or ``section_id``.
+    """
+    if not {"damage_weight", "section_id"} <= set(df_test.columns):
+        logging.info("Design metrics skipped (no damage_weight/section_id).")
+        return None
+    mask = None
+    if "wind_wave_group" in df_test.columns:
+        mask = (df_test["wind_wave_group"] == "Extrapolate_Extrapolate").values
+        if "wind_speed" in df_test.columns:
+            mask &= (df_test["wind_speed"] >= min_wind).values
+    train_life = None
+    if df_train is not None and {"damage", "damage_weight", "section_id"
+                                } <= set(df_train.columns):
+        train_life = design_utils.lifetime_damage(
+            df_train["damage"].values, df_train["damage_weight"].values,
+            df_train["section_id"].values)
+    return {
+        "weights": df_test["damage_weight"].values,
+        "sections": df_test["section_id"].values,
+        "mask_exex": mask,
+        "train_life": train_life,
+    }
+
+
+def _design_row(design: dict | None, y_true: np.ndarray, y_pred: np.ndarray,
+                tol: float) -> dict:
+    """Design metrics of one model (empty dict if inputs are missing).
+
+    Args:
+        design: Output of :func:`_design_inputs`.
+        y_true: True test damage.
+        y_pred: Predicted test damage.
+        tol: Relative under-prediction tolerance.
+
+    Returns:
+        Dict of design-metric columns.
+    """
+    if design is None:
+        return {}
+    row = {
+        "nonconservative_share":
+            design_utils.nonconservative_share(y_true, y_pred, tol=tol),
+    }
+    if design["mask_exex"] is not None:
+        row["nonconservative_share_exex"] = design_utils.nonconservative_share(
+            y_true, y_pred, design["mask_exex"], tol=tol)
+    life = design_utils.lifetime_error(y_true, y_pred, design["weights"],
+                                       design["sections"], design["train_life"])
+    row["lifetime_err_crit"] = life["lifetime_err_crit"]
+    row["lifetime_err_maxabs"] = life["lifetime_err_maxabs"]
+    return row
 
 
 def _append_leaderboard(

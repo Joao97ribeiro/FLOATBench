@@ -40,7 +40,7 @@ PAPER_PARTITION = {
 
 # One-at-a-time sweeps around PAPER_PARTITION.
 PARTITION_SWEEPS = {
-    "alpha": [0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 10.0],
+    "alpha": [0.05, 0.075, 0.1, 0.15, 0.2, 0.3, 1.0, 10.0],
     "edge": [0.25, 0.375, 0.5, 0.75, 1.0],
     "offset_mult": [0.0, 0.5, 1.0, 1.5, 2.0],
     "scale_stat": ["mean", "median"],
@@ -215,7 +215,8 @@ def boundary_tolerance(train_sims: pd.DataFrame,
         test_sims: Test simulations (one row per ``sim_id``).
 
     Returns:
-        ``{"wind": epsilon, "wave": epsilon}`` in original units.
+        ``{"wind": epsilon, "wave": epsilon}`` in standardized units, the
+        units of the hull distance.
     """
     grouper, _ = fit_released_grouper(train_sims, test_sims)
     edge = PAPER_PARTITION["edge"]

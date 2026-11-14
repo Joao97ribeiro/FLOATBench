@@ -35,6 +35,10 @@ flags.DEFINE_list("towers", "ref,opt1,opt2",
 flags.DEFINE_string("output_dir", "outputs/split_demo",
                     "Where to write the split CSVs and plots.")
 flags.DEFINE_bool("save_svg", False, "Also save plots as SVG.")
+flags.DEFINE_enum(
+    "boundary_space", "standardized", ["standardized", "original"],
+    "Coordinates of the alpha shape and boundary distance. 'original' "
+    "reproduces the regime labels of dataset v1.0.")
 flags.DEFINE_list("train_ws_ids", None,
                   "wind_speed_id values to include in train.")
 flags.DEFINE_list("train_hs_ids", None,
@@ -144,6 +148,7 @@ def _split_one_tower(tower: str, train_ws: list[int], train_hs: list[int],
         train_hs_ids=train_hs,
         train_tp_ids=train_tp,
         plot_dir=FLAGS.output_dir if make_plots else None,
+        boundary_space=FLAGS.boundary_space,
     )
 
     logging.info("[%s] Train: %d rows (%.2f%%)", tower, len(df_train),

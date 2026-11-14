@@ -25,14 +25,17 @@ FEATURES = WIND_COLS + WAVE_COLS + [
 REGIME_COLS = ["wind_group", "wave_group", "wind_wave_group"]
 
 # Released partition: alpha-shape parameter, In-train distance threshold
-# (tau), train-spacing statistic and multiplier on the boundary tolerance
-# epsilon = tau * s (s = standardized spacing scale; epsilon is applied to
-# the distance to the alpha-shape boundary in original feature units).
+# (tau), train-spacing statistic, multiplier on the boundary tolerance
+# epsilon = tau * s (s = standardized spacing scale) and the coordinates of
+# the alpha shape. With space="standardized" the shape, the distance to its
+# boundary and epsilon share one scaled space; space="original" fits the
+# shape in original feature units and reproduces dataset v1.0.
 PAPER_PARTITION = {
     "alpha": 0.1,
     "edge": 0.5,
     "scale_stat": "mean",
-    "offset_mult": 1.0
+    "offset_mult": 1.0,
+    "space": "standardized",
 }
 
 # One-at-a-time sweeps around PAPER_PARTITION.
@@ -129,7 +132,8 @@ def make_grouper(
         alpha: float = 0.1,
         edge: float = 0.5,
         scale_stat: str = "mean",
-        offset_mult: float = 1.0) -> domain_groups.WindWaveDomainGrouper:
+        offset_mult: float = 1.0,
+        space: str = "standardized") -> domain_groups.WindWaveDomainGrouper:
     """Builds the regime grouper with the given partition parameters.
 
     Args:
@@ -137,6 +141,8 @@ def make_grouper(
         edge: In-train distance threshold (standardized units).
         scale_stat: Train-spacing statistic (``"mean"`` or ``"median"``).
         offset_mult: Multiplier on the boundary tolerance.
+        space: Coordinates of the alpha shape (``"standardized"`` or
+            ``"original"``, the latter reproducing dataset v1.0).
 
     Returns:
         An unfitted :class:`WindWaveDomainGrouper`.
@@ -153,7 +159,8 @@ def make_grouper(
         extrap_edges=[],
         kind_scaler="standard",
         boundary_alpha=alpha,
-        boundary_offset_mult=offset_mult)
+        boundary_offset_mult=offset_mult,
+        boundary_space=space)
 
 
 def label_partition(train_sims: pd.DataFrame, test_sims: pd.DataFrame,
@@ -165,7 +172,7 @@ def label_partition(train_sims: pd.DataFrame, test_sims: pd.DataFrame,
         test_sims: Test simulations (one row per ``sim_id``), without
             label columns.
         **cfg: Keys of :data:`PAPER_PARTITION` to override (``alpha``,
-            ``edge``, ``scale_stat``, ``offset_mult``).
+            ``edge``, ``scale_stat``, ``offset_mult``, ``space``).
 
     Returns:
         ``test_sims`` with ``wind_group``, ``wave_group`` and

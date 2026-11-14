@@ -104,12 +104,14 @@ def split_train_test_by_ids(
     return df.loc[mask].copy(), df.loc[~mask].copy()
 
 
-def split_with_regimes(
+def split_with_regimes(  # pylint: disable=too-many-arguments
     df: pd.DataFrame,
     train_ws_ids: Iterable[int] = DEFAULT_TRAIN_WS_IDS,
     train_hs_ids: Iterable[int] = DEFAULT_TRAIN_HS_IDS,
     train_tp_ids: Iterable[int] = DEFAULT_TRAIN_TP_IDS,
     plot_dir: str = None,
+    *,
+    boundary_space: str = "standardized",
 ) -> Tuple[pd.DataFrame, pd.DataFrame, Tuple[Polygon, Polygon], Dict[str, Any]]:
     """Split by grid IDs and attach alpha-shape regime labels to test.
 
@@ -126,6 +128,9 @@ def split_with_regimes(
         plot_dir: If given, save the grouper's train-spacing distance
             histograms (``dist/*.png``) under
             ``<plot_dir>/train_test/test_groups/plots/``.
+        boundary_space: Coordinates of the alpha shape and of the
+            boundary distance. ``"standardized"`` (default) gives the
+            current labels; ``"original"`` reproduces dataset v1.0.
 
     Returns:
         ``(df_train, df_test_with_regimes, polygons, thresholds_meta)``
@@ -149,6 +154,7 @@ def split_with_regimes(
         kind_scaler="standard",
         interp_names=["In-train", "Interpolate"],
         interp_edges=[0.5],
+        boundary_space=boundary_space,
     )
     df_test_groups, thresholds_meta, _ = grouper.group(
         df_train=df_train,

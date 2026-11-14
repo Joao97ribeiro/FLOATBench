@@ -15,6 +15,19 @@ FLAGS = flags.FLAGS
 # Test Data
 flags.DEFINE_string("test_csv", None, "Path to test CSV with groups.")
 
+# Training data (optional): known labels enter the lifetime damage.
+flags.DEFINE_string(
+    "train_csv", None,
+    "Optional training CSV; enables the full-envelope lifetime error.")
+
+# Design metrics
+flags.DEFINE_float(
+    "nonconservative_min_wind", 10.0,
+    "Minimum wind speed (m/s) of the EX_EX rows for the non-conservative "
+    "share.")
+flags.DEFINE_float("nonconservative_tol", 0.1,
+                   "Relative under-prediction tolerance (0.1 = 10%).")
+
 # Model Trained
 flags.DEFINE_string("model_cfg_path", None, "Path to autogluon_meta.json.")
 
@@ -54,6 +67,11 @@ def main(_):
     df_test = data.ensure_wind_wave_group(
         data.ensure_section_name(pd.read_csv(FLAGS.test_csv, low_memory=False)))
 
+    df_train = None
+    if FLAGS.train_csv:
+        logging.info("Loading training data from %s", FLAGS.train_csv)
+        df_train = pd.read_csv(FLAGS.train_csv, low_memory=False)
+
     detail_sections = (None if FLAGS.detail_sections == [] else
                        FLAGS.detail_sections)
 
@@ -67,14 +85,18 @@ def main(_):
 
     logging.info("Generating leaderboard with detailed sections: %s",
                  detail_sections)
-    predictor.generate_leaderboard(df_test=df_test,
-                                   detail_sections=detail_sections,
-                                   bootstrap=FLAGS.bootstrap,
-                                   n_bootstrap=FLAGS.n_bootstrap,
-                                   bootstrap_seed=FLAGS.bootstrap_seed,
-                                   bootstrap_alpha=FLAGS.bootstrap_alpha,
-                                   max_models=FLAGS.max_models,
-                                   bootstrap_cluster=FLAGS.bootstrap_cluster)
+    predictor.generate_leaderboard(
+        df_test=df_test,
+        detail_sections=detail_sections,
+        bootstrap=FLAGS.bootstrap,
+        n_bootstrap=FLAGS.n_bootstrap,
+        bootstrap_seed=FLAGS.bootstrap_seed,
+        bootstrap_alpha=FLAGS.bootstrap_alpha,
+        max_models=FLAGS.max_models,
+        bootstrap_cluster=FLAGS.bootstrap_cluster,
+        df_train=df_train,
+        nonconservative_min_wind=FLAGS.nonconservative_min_wind,
+        nonconservative_tol=FLAGS.nonconservative_tol)
 
     # Paper-style summary tables collected in the same subfolder as
     # the extended leaderboards (leaderboard_test_summaries/).

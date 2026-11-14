@@ -10,13 +10,13 @@
     <link rel="icon" type="image/png" href="figures/logo.png">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <link rel="stylesheet" href="static/css/style.css?v=202609252130">
+  <link rel="stylesheet" href="static/css/style.css?v=202611141400">
   <script defer src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
   <script src="static/data/data.js"></script>
   <script src="static/data/damage_ref.js"></script>
   <script src="static/data/damage_opt1.js"></script>
   <script src="static/data/damage_opt2.js"></script>
-  <script defer src="static/js/app.js?v=202609252130"></script>
+  <script defer src="static/js/app.js?v=202611141400"></script>
 </head>
 <body>
 
@@ -74,7 +74,7 @@
         <p class="subtitle is-6">the global rank-1 model in joint wind-and-wave extrapolation</p>
       </div>
       <div class="box has-text-centered highlight">
-        <p class="title is-3" style="color:#294366;">1.5–1.9×</p>
+        <p class="title is-3" style="color:#294366;">1.6–1.7×</p>
         <p class="subtitle is-6">the best extrapolation error left by validation-based selection</p>
       </div>
       <div class="box has-text-centered highlight">
@@ -91,7 +91,7 @@
     <h2 class="title is-3">Abstract</h2>
     <div class="content has-text-justified">
       <p>Tabular surrogates are commonly ranked on random validation splits. Yet a surrogate is used to predict wherever no simulation exists, both between training points (interpolation) and beyond the training domain (extrapolation), and random splits cannot tell the two apart, so the selected model may fail where it extrapolates. We introduce <strong>FLOATBench</strong>, a tabular dataset and benchmark for fatigue prediction on floating offshore wind turbine towers that tests whether model selection stays valid as predictions move from interpolation to extrapolation. It provides 582,120 per-section fatigue-damage labels from 19,404 OpenFAST simulations of three 22 MW tower geometries over 1,078 wind–wave operating conditions.</p>
-      <p><strong>FLOATBench</strong> is distinguished by a regime-aware partition that places each test point relative to the training domain as in-train, interpolation, or extrapolation, so extrapolation depth is controlled by construction, and by cross-tower transfer with condition-level bootstrap intervals. Across 735 trained surrogates and seven standalone baselines on three towers, the global rank-1 model falls to ranks 23, 11, and 11 in joint wind-and-wave extrapolation, where a network ranked 69th–79th globally wins, and validation-based selection leaves 1.5–1.9× the best available extrapolation error. In cross-tower transfer, Rel L² error is 0.067–0.098 when the reference tower is in training versus 0.423 when it is held out.</p>
+      <p><strong>FLOATBench</strong> is distinguished by a regime-aware partition that places each test point relative to the training domain as in-train, interpolation, or extrapolation, so extrapolation depth is controlled by construction, and by cross-tower transfer with condition-level bootstrap intervals. Across 735 trained surrogates and seven standalone baselines on three towers, the global rank-1 model falls to ranks 21, 11, and 13 in joint wind-and-wave extrapolation, where a network ranked 69th–79th globally wins, and validation-based selection leaves 1.6–1.7× the best available extrapolation error. In cross-tower transfer, Rel L² error is 0.067–0.098 when the reference tower is in training versus 0.423 when it is held out.</p>
       <p>Robustness checks show that the crossover holds across all non-degenerate partition settings and after retraining on two alternative training grids. Limitations: one 22 MW design family and aligned power-production conditions. Resources: dataset, code, and trained surrogates are released.</p>
     </div>
   </div>
@@ -402,7 +402,7 @@
       <div class="columns">
         <div class="column is-6">
           <div class="content">
-            <p><strong>The Global winner loses at the wind-and-wave extrapolation regime.</strong> EX_EX is the deepest extrapolation cell and has the highest error on every tower. The Global rank-1 <code>WeightedEnsemble_L2</code> drops to EX_EX ranks 23 / 11 / 11 (REF / OPT1 / OPT2), while the EX_EX rank-1 <code>NeuralNetFastAI_r102_BAG_L1</code> sits at Global ranks 79 / 73 / 69.</p>
+            <p><strong>The Global winner loses at the wind-and-wave extrapolation regime.</strong> EX_EX is the deepest extrapolation cell and has the highest error on every tower. The Global rank-1 <code>WeightedEnsemble_L2</code> drops to EX_EX ranks 21 / 11 / 13 (REF / OPT1 / OPT2), while the EX_EX rank-1 <code>NeuralNetFastAI_r102_BAG_L1</code> sits at Global ranks 79 / 73 / 69.</p>
           </div>
           <figure class="image"><img src="figures/crossover.png" alt="Global and EX_EX Rel L2 DEL of the Global rank-1 and EX_EX rank-1 models"></figure>
           <p class="how">Rel L² DEL, Global vs EX_EX. The Global winner drops at EX_EX, where a low-ranked network wins.</p>
@@ -413,19 +413,19 @@
             <table class="table is-narrow is-fullwidth schema results">
               <thead><tr><th>Model</th><th class="num tw-ref">REF</th><th class="num tw-opt1">OPT1</th><th class="num tw-opt2">OPT2</th></tr></thead>
               <tbody>
-                <tr><td>Ensemble<sup>†</sup></td><td class="num"><b>0.063</b> / 0.101</td><td class="num"><b>0.069</b> / 0.115</td><td class="num"><b>0.070</b> / 0.117</td></tr>
-                <tr><td>FastAI NN<sup>*</sup></td><td class="num">0.079 / <b>0.054</b></td><td class="num">0.085 / <b>0.075</b></td><td class="num">0.081 / <b>0.073</b></td></tr>
-                <tr><td>TabPFN</td><td class="num">0.072 / 0.104</td><td class="num">0.072 / 0.099</td><td class="num">0.071 / 0.090</td></tr>
-                <tr><td>XGBoost</td><td class="num">0.078 / 0.115</td><td class="num">0.078 / 0.150</td><td class="num">0.079 / 0.153</td></tr>
-                <tr><td>PCE</td><td class="num">0.087 / 0.074</td><td class="num">0.108 / 0.117</td><td class="num">0.104 / 0.118</td></tr>
-                <tr><td>Resp. surface</td><td class="num">0.087 / 0.073</td><td class="num">0.143 / 0.194</td><td class="num">0.137 / 0.189</td></tr>
-                <tr><td>GP</td><td class="num">0.131 / 0.307</td><td class="num">0.147 / 0.340</td><td class="num">0.145 / 0.335</td></tr>
+                <tr><td>Ensemble<sup>†</sup></td><td class="num"><b>0.063</b> / 0.088</td><td class="num"><b>0.069</b> / 0.108</td><td class="num"><b>0.070</b> / 0.111</td></tr>
+                <tr><td>FastAI NN<sup>*</sup></td><td class="num">0.079 / <b>0.054</b></td><td class="num">0.085 / <b>0.069</b></td><td class="num">0.081 / <b>0.065</b></td></tr>
+                <tr><td>TabPFN</td><td class="num">0.072 / 0.084</td><td class="num">0.072 / 0.093</td><td class="num">0.071 / 0.083</td></tr>
+                <tr><td>XGBoost</td><td class="num">0.078 / 0.104</td><td class="num">0.078 / 0.146</td><td class="num">0.079 / 0.150</td></tr>
+                <tr><td>PCE</td><td class="num">0.087 / 0.073</td><td class="num">0.108 / 0.113</td><td class="num">0.104 / 0.115</td></tr>
+                <tr><td>Resp. surface</td><td class="num">0.087 / 0.071</td><td class="num">0.143 / 0.185</td><td class="num">0.137 / 0.180</td></tr>
+                <tr><td>GP</td><td class="num">0.131 / 0.314</td><td class="num">0.147 / 0.347</td><td class="num">0.145 / 0.342</td></tr>
               </tbody>
             </table>
           </div>
           <p class="how"><sup>†</sup>Global and <sup>*</sup>EX_EX rank-1 of the AutoGluon pool; other rows are standalone baselines.</p>
           <div class="content is-size-6">
-            <p><strong>The crossover is robust and not an AutoML artifact.</strong> It holds for every partition setting that still leaves an extrapolation region, on all three towers, and after retraining the pool on two other training grids. TabPFN and tuned XGBoost do not beat the EX_EX winner. Selecting on validation leaves 1.5–1.9× the best available EX_EX error; the ensemble puts 86–88% of its weight on tree models, which under-predict beyond the training domain.</p>
+            <p><strong>The crossover is robust and not an AutoML artifact.</strong> It holds for every partition setting that still leaves an extrapolation region, on all three towers, and after retraining the pool on two other training grids. TabPFN and tuned XGBoost do not beat the EX_EX winner. Selecting on validation leaves 1.6–1.7× the best available EX_EX error; the ensemble puts 86–88% of its weight on tree models, which under-predict beyond the training domain.</p>
           </div>
         </div>
       </div>
@@ -495,7 +495,7 @@
         <div class="box">
           <p class="title is-6">Stability of the regime labels</p>
           <figure class="image"><a href="figures/app_split_sensitivity.png"><img src="figures/app_split_sensitivity.png" alt="Sensitivity of regime labels to partition parameters"></a></figure>
-          <p class="how">Labels stay stable for α in [0.05, 0.3] (agreement ≥ 97.9%).</p>
+          <p class="how">Labels do not change for α in [0.05, 0.3]; α = 1 moves 14 simulations into EX_EX.</p>
         </div>
       </div>
       <div class="column is-half">

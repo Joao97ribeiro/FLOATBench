@@ -1,3 +1,4 @@
+# pylint: disable=too-many-arguments
 """Reproduce the FLOATBench train/test split from grid IDs.
 
 The official FLOATBench split is fully determined by the integer grid
@@ -104,7 +105,7 @@ def split_train_test_by_ids(
     return df.loc[mask].copy(), df.loc[~mask].copy()
 
 
-def split_with_regimes(  # pylint: disable=too-many-arguments
+def split_with_regimes(
     df: pd.DataFrame,
     train_ws_ids: Iterable[int] = DEFAULT_TRAIN_WS_IDS,
     train_hs_ids: Iterable[int] = DEFAULT_TRAIN_HS_IDS,

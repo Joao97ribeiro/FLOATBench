@@ -420,8 +420,9 @@ depend on the units:
   (default 1.0) scales $\varepsilon$.
 - **Spacing statistic** `scale_stat="mean"`.
 
-Dataset v1.0 fitted the hull and measured the boundary distance in the
-original feature units while $\varepsilon$ used the standardized
+Dataset v1.1 (current release) uses this partition. Dataset v1.0
+fitted the hull and measured the boundary distance in the original
+feature units while $\varepsilon$ used the standardized
 spacing. That partition is kept as `boundary_space="original"`
 (`--boundary_space=original` in `scripts/split/config.cfg`) to
 reproduce the v1.0 labels exactly. The two partitions differ in 98 of
@@ -484,13 +485,13 @@ In the table, `<name>` stands for
 | Analysis | Command | Main outputs and expected values |
 | --- | --- | --- |
 | Condition-level bootstrap: top-10 CIs and paired rank-1 vs rank-2 | `cluster_bootstrap` | `cluster_top10.csv`, `paired_top2.csv`. Paired interval above zero on 6 of 9 groups; tied on E2 REF $[-0.0008, 0.0010]$, E1 OPT1, E3 REF+OPT2→OPT1. Row-level std smaller by a median 4.8× / 8.3× / 4.2× (E1 / E2 / E3). |
-| Partition label stability | `split_sensitivity` | `sensitivity_results.csv`: 100% reproduction of the released labels, $\varepsilon$ = 0.049 (wind) / 0.021 (wave); agreement ≥ 97.9% and EX_EX Jaccard ≥ 0.90 for $\alpha \in [0.05, 0.3]$; tolerance removed: 254 → 361 EX_EX simulations. |
-| Crossover over the 15 partition variants | `ranking_stability` | `summary.csv`: crossover 15/15 on every tower and metric; ensemble EX_EX rank 23 / 11 / 11 (Rel L² DEL); EX_EX rank-1 `NeuralNetFastAI_r102_BAG_L1` at global ranks 79 / 73 / 69; min Kendall τ 0.89 / 0.90 / 0.92. |
+| Partition label stability | `split_sensitivity` | `sensitivity_results.csv`: 100% reproduction of the released v1.1 labels, $\varepsilon$ = 0.049 (wind) / 0.021 (wave) in standardized units; labels unchanged for $\alpha \in [0.05, 0.3]$; $\alpha = 1$ adds 14 simulations to EX_EX (216 → 230); tolerance removed: 216 → 340 EX_EX simulations. |
+| Crossover over the 16 partition variants | `ranking_stability` | `summary.csv`: crossover 16/16 on every tower and metric; ensemble EX_EX rank 21 / 11 / 13 (Rel L² DEL); EX_EX rank-1 `NeuralNetFastAI_r102_BAG_L1` at global ranks 79 / 73 / 69; min Kendall τ 0.87 / 0.82 / 0.82. |
 | Alternative held-out grids | `grid_variants_split`, then **trains** (below), then `grid_variants` with `--variant=A` and `--variant=B` | `summary_{A,B}.csv`: grid A EX_EX rank 20 / 37 of the global rank-1; grid B deep corner ensemble rank 7 / 9, rank-1 `NeuralNetFastAI_r191_BAG_L1` (0.0744 / 0.932). |
 | Condition-grouped random split | `grouped_random_split`, then **trains** (below), then `grouped_random` | 78.6% seed sharing in E1; `summary.csv`: ensemble Rel L² DEL 0.0191 (E1) vs 0.0198 (grouped, 0.0198 to 0.0201 over three draws). |
-| Selection regret | `selection` | `selection_analysis.csv`: validation pick leaves 0.033 / 0.015 / 0.027 of EX_EX damage R²; 1.87× / 1.53× / 1.60× the best EX_EX Rel L² DEL. |
-| Mechanism | `mechanism` | `mechanism_*.csv`: ensemble weight on trees 87.5% / 87.5% / 85.7% (needs the trained `best` predictors, loaded on CPU); median EX_EX bias trees −0.061 / −0.164 / −0.202; 8 / 6 / 8 networks in the EX_EX top-10. |
-| Classical and standalone baselines | **trains**: `baselines_classical` (CPU) and `baselines_modern` (GPU); then `baselines` | `baselines_global_exex.csv`, `baselines_per_regime.csv`, `tabpfn_in_pool.csv`: e.g. GP EX_EX Rel L² DEL 0.307 / 0.340 / 0.335; TabPFN damage-R² ranks 77 / 10 / 5 (global), 79 / 10 / 7 (EX_EX). |
+| Selection regret | `selection` | `selection_analysis.csv`: validation pick leaves 0.020 / 0.013 / 0.027 of EX_EX damage R²; 1.61× / 1.56× / 1.69× the best EX_EX Rel L² DEL. |
+| Mechanism | `mechanism` | `mechanism_*.csv`: ensemble weight on trees 87.5% / 87.5% / 85.7% (needs the trained `best` predictors, loaded on CPU); median EX_EX bias trees −0.098 / −0.188 / −0.224; 7 / 6 / 8 networks in the EX_EX top-10. |
+| Classical and standalone baselines | **trains**: `baselines_classical` (CPU) and `baselines_modern` (GPU); then `baselines` | `baselines_global_exex.csv`, `baselines_per_regime.csv`, `tabpfn_in_pool.csv`: e.g. GP EX_EX Rel L² DEL 0.314 / 0.347 / 0.342; TabPFN damage-R² ranks 77 / 10 / 5 (global), 70 / 12 / 7 (EX_EX). |
 | Raw time-series label audit | `audit` with `--package_dir=<audit_package>` | 4,410 labels of 147 simulations reproduced; maximum relative deviation 4.6e-16 (criterion ≤ 1e-6). See [`scripts/analyses/audit/README.md`](./scripts/analyses/audit/README.md). |
 
 Training commands for the retraining analyses (benchmark settings, 4 h
@@ -532,7 +533,7 @@ extrapolation regime.** EX_EX (extrapolation on both wind and wave) is
 the deepest extrapolation cell and has the highest error on every tower.
 Ranking on all test points (Global) versus on EX_EX points only gives
 different winners on every tower: the Global rank-1
-`WeightedEnsemble_L2` drops to EX_EX ranks 23 / 11 / 11
+`WeightedEnsemble_L2` drops to EX_EX ranks 21 / 11 / 13
 (REF / OPT1 / OPT2), while the EX_EX rank-1
 `NeuralNetFastAI_r102_BAG_L1` sits at Global ranks 79 / 73 / 69. The
 crossover holds under every tested partition setting that keeps an

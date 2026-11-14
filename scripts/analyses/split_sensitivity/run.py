@@ -97,7 +97,7 @@ def main(_) -> None:
     train, test = partition.load_sims(FLAGS.data_dir, FLAGS.tower)
     eps = partition.boundary_tolerance(train, test)
     logging.info(
-        "Boundary tolerance epsilon: wind %.3f, wave %.3f (original "
+        "Boundary tolerance epsilon: wind %.3f, wave %.3f (standardized "
         "units)", eps["wind"], eps["wave"])
 
     rows, base = [], None

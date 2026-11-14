@@ -3,8 +3,9 @@
 
 An alpha shape is a generalisation of the convex hull that allows concave
 boundaries.  The ``alpha`` parameter controls how tightly the boundary
-wraps around the data: larger values produce shapes closer to the convex
-hull, while smaller values follow the data more tightly.
+wraps around the data: triangles with a circumradius above ``1 / alpha``
+are dropped, so values near zero give the convex hull and larger values
+follow the data more tightly.
 
 Typical usage::
 
@@ -23,7 +24,7 @@ class AlphaShape:
     """Compute and query an alpha shape built from 2-D training points.
 
     Attributes:
-        alpha: Alpha parameter (smaller = tighter hull).
+        alpha: Alpha parameter (larger = tighter hull).
         boundary_edges: List of ``(point_a, point_b)`` coordinate pairs
             that form the boundary after :meth:`fit`.
     """

@@ -62,7 +62,7 @@ flags.DEFINE_string("output_dir", None, "Where to write the tables.")
 
 METRICS = ("rel_l2", "r2")
 SAVED_COL = {"rel_l2": "rel_l2_del", "r2": "r2_damage"}
-DEGENERATE = "alpha=10.0"  # convex hull: no extrapolation region
+DEGENERATE = "alpha=10.0"  # hull too tight: most test sims become EX
 
 
 def _validate(bench_csv: str, glob: dict, ex: dict) -> None:

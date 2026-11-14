@@ -400,26 +400,39 @@ The released partition labels each test simulation separately in the
 wind plane (`mean_wind_speed`, `std_wind_speed`) and the wave plane
 (`wave_hs`, `wave_tp`), with four parameters:
 
+All distances, the hull and the tolerance live in one standardized
+space (each feature scaled to zero mean and unit variance over the
+training set), so the tolerance is dimensionless and the labels do not
+depend on the units:
+
 - **Alpha-shape parameter** `boundary_alpha = 0.1`: the concave
-  training hull, fitted in original (unstandardized) units.
+  training hull, fitted in standardized units (triangles with a
+  circumradius above $1/\alpha$ are dropped; $\alpha \to 0$ gives the
+  convex hull).
 - **In-train threshold** $\tau$ = `interp_edges=[0.5]`: a test point
-  whose nearest-training distance in standardized units, divided by
-  the mean train-to-train spacing $s$, is at most $\tau$ is
-  `In-train`, otherwise provisionally `Interpolate`.
+  whose nearest-training distance, divided by the mean
+  train-to-train spacing $s$, is at most $\tau$ is `In-train`,
+  otherwise provisionally `Interpolate`.
 - **Boundary tolerance** $\varepsilon = \tau s$: a point is relabelled
   `Extrapolate` only if it lies outside the alpha shape **and** at least
-  $\varepsilon$ from its boundary. $s$ is the standardized spacing
-  scale, while the distance to the boundary is measured in the original
-  feature units ($\varepsilon = 0.049$ in the wind plane and $0.021$ in
-  the wave plane for the released split). Points just outside the hull
-  but within the tolerance stay `Interpolate`. `boundary_offset_mult`
+  $\varepsilon$ from its boundary. Points just outside the hull but
+  within the tolerance stay `Interpolate`. `boundary_offset_mult`
   (default 1.0) scales $\varepsilon$.
 - **Spacing statistic** `scale_stat="mean"`.
 
+Dataset v1.0 fitted the hull and measured the boundary distance in the
+original feature units while $\varepsilon$ used the standardized
+spacing. That partition is kept as `boundary_space="original"`
+(`--boundary_space=original` in `scripts/split/config.cfg`) to
+reproduce the v1.0 labels exactly. The two partitions differ in 98 of
+the 4,740 test simulations per tower (2.1%), all in the wind plane and
+all moving from `Extrapolate` to `Interpolate` or `In-train`.
+
 To explore a different partition, instantiate
 `floatbench.split.domain_groups.WindWaveDomainGrouper` directly with
-custom `boundary_alpha`, `interp_edges`, `boundary_offset_mult` or
-`scale_stat`; `python -m analyses.split_sensitivity` sweeps all four.
+custom `boundary_alpha`, `interp_edges`, `boundary_offset_mult`,
+`scale_stat` or `boundary_space`; `python -m analyses.split_sensitivity`
+sweeps the first four.
 
 This lets you construct your own train/test splits without
 re-simulating any OpenFAST cases.

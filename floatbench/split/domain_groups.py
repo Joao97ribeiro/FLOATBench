@@ -41,6 +41,8 @@ class WindWaveDomainGrouper:
         extrap_names: Ordered extrapolation group names.
         extrap_edges: Distance thresholds for extrapolation sub-groups.
         boundary_alpha: Alpha parameter for the alpha shape boundary.
+        boundary_space: Coordinates of the alpha shape and of the boundary
+          distance ('standardized' or 'original').
         kind_scaler: Type of scaler to apply to the feature spaces.
 
     Notes:
@@ -64,6 +66,7 @@ class WindWaveDomainGrouper:
         kind_scaler: Literal["standard", "minmax", "robust"] = "standard",
         boundary_alpha: float = 0.1,
         boundary_offset_mult: float = 1.0,
+        boundary_space: Literal["standardized", "original"] = "standardized",
     ) -> None:
         """Initializes the domain grouper.
 
@@ -83,8 +86,11 @@ class WindWaveDomainGrouper:
                 extrapolation groups by k-NN distance (d_norm).
                 If empty, all outside points get extrap_names[0].
             kind_scaler: Scaler type ('standard', 'minmax', 'robust').
-            boundary_alpha: Alpha parameter for the alpha shape boundary.
-                Smaller values produce tighter (more concave) hulls.
+            boundary_alpha: Alpha parameter for the alpha shape boundary,
+                in the units of ``boundary_space``. Triangles with a
+                circumradius above ``1 / boundary_alpha`` are dropped, so
+                larger values give tighter (more concave) shapes and
+                values near zero give the convex hull.
             boundary_offset_mult: Multiplier on the boundary tolerance
                 ``epsilon = interp_edges[0] * s`` (``s`` = train spacing
                 scale in standardized units). A point is labelled
@@ -93,6 +99,15 @@ class WindWaveDomainGrouper:
                 boundary. 1.0 is the released (paper) setting; 0.0
                 removes the tolerance. Used by the partition sensitivity
                 analysis.
+            boundary_space: Coordinates in which the alpha shape is fitted
+                and the distance to its boundary is measured.
+                ``"standardized"`` (default) uses the same scaled space
+                as the k-NN distances and the tolerance, so the
+                tolerance is dimensionless and the labels do not depend
+                on the units. ``"original"`` fits the shape in the
+                original feature units while the tolerance stays in
+                standardized units; it reproduces the labels of dataset
+                v1.0.
         """
 
         self.wind_cols: List[str] = list(wind_cols)
@@ -121,6 +136,10 @@ class WindWaveDomainGrouper:
 
         self.boundary_alpha = boundary_alpha
         self.boundary_offset_mult = float(boundary_offset_mult)
+        if boundary_space not in ("standardized", "original"):
+            raise ValueError(
+                "boundary_space must be 'standardized' or 'original'.")
+        self.boundary_space = boundary_space
 
         # state
         self._wind_scale: Optional[float] = None
@@ -129,6 +148,8 @@ class WindWaveDomainGrouper:
         self._wave_summary: Optional[Dict[str, Any]] = None
         self._wind_shape: Optional[AlphaShape] = None
         self._wave_shape: Optional[AlphaShape] = None
+        self._scaler: Optional[Any] = None
+        self._features: List[str] = []
         self._fitted: bool = False
 
         self.kind_scaler = kind_scaler
@@ -215,10 +236,10 @@ class WindWaveDomainGrouper:
             plot_dir: Directory to save diagnostic plots (if None, no plots are
               saved).
             save_svg: Whether to save plots as SVG in addition to PNG.
-            df_train_orig: DataFrame with original (unscaled) training data
-              for convex hull check.
-            df_test_orig: DataFrame with original (unscaled) test data
-              for convex hull check.
+            df_train_orig: DataFrame with original (unscaled) training data,
+              used only with ``boundary_space="original"``.
+            df_test_orig: DataFrame with original (unscaled) test data,
+              used only with ``boundary_space="original"``.
 
         Returns:
             Tuple of (labeled test DataFrame, metadata dictionary).
@@ -272,6 +293,7 @@ class WindWaveDomainGrouper:
             "k": int(self.k),
             "aggregate": str(self.aggregate),
             "kind_scaler": str(self.kind_scaler),
+            "boundary_space": str(self.boundary_space),
             "wind": {
                 "cols": self.wind_cols,
                 "edges": self.wind_edges,
@@ -374,6 +396,8 @@ class WindWaveDomainGrouper:
         scaler = _make_scaler(kind=self.kind_scaler)
         features = list(self.wind_cols) + list(self.wave_cols)
         scaler.fit(df_train[features])
+        self._scaler = scaler
+        self._features = features
 
         df_train_scaled = df_train.copy()
         df_test_scaled = df_test.copy()
@@ -495,15 +519,46 @@ class WindWaveDomainGrouper:
     def boundary_polygons(self) -> Tuple[Optional[list], Optional[list]]:
         """Return the wind and wave alpha shape boundary polygons.
 
+        The polygons are always given in the original feature units, so
+        they can be drawn over the raw data. With
+        ``boundary_space="standardized"`` the vertices are mapped back
+        with the scaler fitted in :meth:`group`.
+
         Returns:
             Tuple of (wind_polygon, wave_polygon). Each is a list of
             (x, y) tuples forming the boundary, or None if not fitted.
         """
-        wind_poly = (self._wind_shape.boundary_polygon()
-                     if self._wind_shape is not None else None)
-        wave_poly = (self._wave_shape.boundary_polygon()
-                     if self._wave_shape is not None else None)
+        wind_poly = self._polygon_in_original_units(self._wind_shape,
+                                                    self.wind_cols)
+        wave_poly = self._polygon_in_original_units(self._wave_shape,
+                                                    self.wave_cols)
         return wind_poly, wave_poly
+
+    def _polygon_in_original_units(self, shape: Optional[AlphaShape],
+                                   cols: List[str]) -> Optional[list]:
+        """Boundary polygon of ``shape`` in the original units of ``cols``.
+
+        Args:
+            shape: Fitted alpha shape, or None.
+            cols: The two feature columns of the shape's plane.
+
+        Returns:
+            List of (x, y) tuples, or None if ``shape`` is None.
+        """
+        if shape is None:
+            return None
+        polygon = shape.boundary_polygon()
+        if (self.boundary_space == "original" or self._scaler is None or
+                not polygon):
+            return polygon
+        idx = [self._features.index(c) for c in cols]
+        mean = np.asarray(getattr(self._scaler, "mean_", np.zeros(4)))[idx]
+        scale = np.asarray(getattr(self._scaler, "scale_", np.ones(4)))[idx]
+        return [
+            tuple(float(v)
+                  for v in np.asarray(p, float) * scale + mean)
+            for p in polygon
+        ]
 
     def _apply_alpha_override(
         self,
@@ -530,26 +585,28 @@ class WindWaveDomainGrouper:
             xtr_scaled: Unique scaled training points.
             xte_scaled: Scaled test points.
             cols: Column names for the feature space.
-            df_train_orig: Original (unscaled) training DataFrame.
-            df_test_orig: Original (unscaled) test DataFrame.
+            df_train_orig: Original (unscaled) training DataFrame, used
+                only with ``boundary_space="original"``.
+            df_test_orig: Original (unscaled) test DataFrame, used only
+                with ``boundary_space="original"``.
 
         Returns:
             Tuple of (updated labels, fitted AlphaShape).
         """
         # Boundary tolerance epsilon = tau * s, with tau the In-train
-        # threshold (edges[0]) and s the train spacing scale, which is
-        # computed in standardized units. Epsilon is compared against the
-        # distance to the alpha-shape boundary, which is measured in the
-        # original feature units (0.049 in the wind plane and 0.021 in the
-        # wave plane for the released split). Points outside the alpha
-        # shape but closer than epsilon to the boundary are kept as
-        # interpolation (a slack band against boundary-proximate points).
+        # threshold (edges[0]) and s the train spacing scale, both in
+        # standardized units. Points outside the alpha shape but closer
+        # than epsilon to its boundary are kept as interpolation (a slack
+        # band against boundary-proximate points).
         boundary_offset = self.boundary_offset_mult * edges[0] * scale
 
-        # Use original (unscaled) points for alpha shape if available,
-        # so the boundary follows the real data shape (not distorted
-        # by the scaler).
-        if df_train_orig is not None and df_test_orig is not None:
+        # "standardized": the shape and the boundary distance live in the
+        # same scaled space as epsilon. "original" (dataset v1.0): the
+        # shape is fitted in the original units, so epsilon is compared
+        # with a distance in original units.
+        use_original = (self.boundary_space == "original" and
+                        df_train_orig is not None and df_test_orig is not None)
+        if use_original:
             train_pts = np.unique(df_train_orig[cols].to_numpy(float), axis=0)
             test_pts = df_test_orig[cols].to_numpy(float)
         else:

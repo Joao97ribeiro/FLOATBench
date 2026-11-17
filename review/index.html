@@ -70,12 +70,12 @@
         <p class="subtitle is-6">22 MW geometries over 1,078 wind–wave operating conditions</p>
       </div>
       <div class="box has-text-centered highlight">
-        <p class="title is-3" style="color:#b02c27;">1 → 23</p>
+        <p class="title is-3" style="color:#b02c27;">1 → 21</p>
         <p class="subtitle is-6">the global rank-1 model in joint wind-and-wave extrapolation</p>
       </div>
       <div class="box has-text-centered highlight">
-        <p class="title is-3" style="color:#294366;">1.6–1.7×</p>
-        <p class="subtitle is-6">the best extrapolation error left by validation-based selection</p>
+        <p class="title is-3" style="color:#294366;">1.4–1.6×</p>
+        <p class="subtitle is-6">the network's extrapolation error left by validation-based selection (five-seed means)</p>
       </div>
       <div class="box has-text-centered highlight">
         <p class="title is-3" style="color:#7cc0cd;">735</p>
@@ -91,7 +91,7 @@
     <h2 class="title is-3">Abstract</h2>
     <div class="content has-text-justified">
       <p>Tabular surrogates are commonly ranked on random validation splits. Yet a surrogate is used to predict wherever no simulation exists, both between training points (interpolation) and beyond the training domain (extrapolation), and random splits cannot tell the two apart, so the selected model may fail where it extrapolates. We introduce <strong>FLOATBench</strong>, a tabular dataset and benchmark for fatigue prediction on floating offshore wind turbine towers that tests whether model selection stays valid as predictions move from interpolation to extrapolation. It provides 582,120 per-section fatigue-damage labels from 19,404 OpenFAST simulations of three 22 MW tower geometries over 1,078 wind–wave operating conditions.</p>
-      <p><strong>FLOATBench</strong> is distinguished by a regime-aware partition that places each test point relative to the training domain as in-train, interpolation, or extrapolation, so extrapolation depth is controlled by construction, and by cross-tower transfer with condition-level bootstrap intervals. Across 735 trained surrogates and seven standalone baselines on three towers, the global rank-1 model falls to ranks 21, 11, and 13 in joint wind-and-wave extrapolation, where a network ranked 69th–79th globally wins, and validation-based selection leaves 1.6–1.7× the best available extrapolation error. In cross-tower transfer, Rel L² error is 0.067–0.098 when the reference tower is in training versus 0.423 when it is held out.</p>
+      <p><strong>FLOATBench</strong> is distinguished by a regime-aware partition that places each test point relative to the training domain as in-train, interpolation, or extrapolation, so extrapolation depth is controlled by construction, and by cross-tower transfer with condition-level bootstrap intervals. Across 735 trained surrogates and seven standalone baselines on three towers, the global rank-1 model falls to ranks 21, 11, and 13 in joint wind-and-wave extrapolation, where a network ranked 69th–79th globally wins, and validation-based selection leaves 1.4–1.6× the network's extrapolation error (five-seed means). In cross-tower transfer, Rel L² error is 0.067–0.098 when the reference tower is in training versus 0.423 when it is held out.</p>
       <p>Robustness checks show that the crossover holds across all non-degenerate partition settings and after retraining on two alternative training grids. Limitations: one 22 MW design family and aligned power-production conditions. Resources: dataset, code, and trained surrogates are released.</p>
     </div>
   </div>
@@ -425,7 +425,7 @@
           </div>
           <p class="how"><sup>†</sup>Global and <sup>*</sup>EX_EX rank-1 of the AutoGluon pool; other rows are standalone baselines.</p>
           <div class="content is-size-6">
-            <p><strong>The crossover is robust and not an AutoML artifact.</strong> It holds for every partition setting that still leaves an extrapolation region, on all three towers, and after retraining the pool on two other training grids. TabPFN and tuned XGBoost do not beat the EX_EX winner. Selecting on validation leaves 1.6–1.7× the best available EX_EX error; the ensemble puts 86–88% of its weight on tree models, which under-predict beyond the training domain.</p>
+            <p><strong>The crossover is robust and not an AutoML artifact.</strong> It holds for every partition setting that still leaves an extrapolation region, on all three towers, and after retraining the pool on two other training grids. TabPFN and tuned XGBoost do not beat the EX_EX winner. Selecting on validation leaves 1.4–1.6× the network's EX_EX error at five-seed means (1.6–1.7× the best available for the released models); the ensemble puts 86–88% of its weight on tree models, which under-predict beyond the training domain.</p>
           </div>
         </div>
       </div>

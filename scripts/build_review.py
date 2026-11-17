@@ -10,13 +10,15 @@ the live Hugging Face sections) and embeds the data in
 `review/static/data/*.js` (compact, split per tower), so the page
 works inside the sandboxed
 viewer of anonymous.4open.science, where `fetch()` of sibling files is
-blocked. The script fails if an identifying term survives.
+blocked. The script fails if an identifying term survives; the terms are
+read from a local file that is not part of the repository.
 """
 
 # pylint: disable=line-too-long  # HTML fragments
 import array
 import base64
 import json
+import os
 import pathlib
 import re
 import shutil
@@ -36,11 +38,10 @@ FIGURES = [
     "app_scatter_global_exex.png", "app_scatter_e3.png",
     "app_split_sensitivity.png", "app_spacing_wind.png", "app_spacing_wave.png"
 ]
-FORBIDDEN = [
-    "joao", "ribeiro", "pimenta", "tavares", "faez", "ahmed", "decodelab",
-    "mit.edu", "delft", "brown univ", "porto", "aveiro", "2605.25717", "arxiv",
-    "github.io", "github.com/joao97", "iclr", "neurips", "openreview"
-]
+TERMS_FILE = pathlib.Path(
+    os.environ.get(
+        "FLOATBENCH_FORBIDDEN_TERMS",
+        pathlib.Path.home() / ".config" / "floatbench" / "forbidden_terms.txt"))
 
 START = f'''<!-- ============ GET STARTED ============ -->
 <section class="section" id="start">
@@ -196,10 +197,18 @@ def build_js(js):
     return js
 
 
+def forbidden_terms():
+    """Identifying terms, one per line, from a file kept outside the repo."""
+    if not TERMS_FILE.is_file():
+        raise SystemExit(f"{TERMS_FILE}: list of identifying terms not found")
+    lines = TERMS_FILE.read_text(encoding="utf-8").splitlines()
+    return [t.strip().lower() for t in lines if t.strip()]
+
+
 def check(path, text):
     """Fail if an identifying term is left."""
     low = text.lower()
-    hits = [t for t in FORBIDDEN if t in low]
+    hits = [t for t in forbidden_terms() if t in low]
     if hits:
         raise SystemExit(f"{path}: identifying terms left: {hits}")
 
